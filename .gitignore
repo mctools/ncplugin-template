@@ -1,0 +1,35 @@
+
+#ignore emacs backup and lock files:
+*~
+\#*\#
+.\#*
+
+#Also needed for vi:
+.*.sw?
+
+#ignore tempory cmake build output and installations:
+/testcode/utils/cache/
+
+#Extra protection against adding in build output created by custom user commands:
+*.so
+*.dylib
+*.dll
+*.o
+*.a
+*.pyc
+*.pyo
+*.exe
+*.gch
+*.out
+*.slo
+*.lo
+*.obj
+*.pch
+*.exe
+*.app
+
+__pycache__/
+
+#Miscellaneous:
+.DS_Store
+vgcore.*

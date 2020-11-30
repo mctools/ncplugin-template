@@ -1,0 +1,25 @@
+NCMAT v3
+# This is just an example NCMAT file, which is used to show how a file placed as
+# <root>/testcode/data/custom.ncmat can be imported and loaded by NCrystal by
+# specifying "ncplugin/custom.ncmat" as the filename (cf. script/dumpexample for
+# an example of this). Of course, depending on the type of plugin being
+# developed, it might be that it is preferable to do the development without any
+# physical files and just rely on NCMAT data provided in the analysis scripts
+# themselves (cf. script/plotviancrystal for an example of this).
+@CELL
+ lengths 4.04958 4.04958 4.04958
+ angles 90 90 90
+@SPACEGROUP
+  225
+@ATOMPOSITIONS
+  Al 0   1/2 1/2
+  Al 0     0   0
+  Al 1/2 1/2   0
+  Al 1/2   0 1/2
+@DEBYETEMPERATURE
+  Al   410.4
+@CUSTOM_SOMEPLUGINNAME
+  #Just some dummy stuff, "SOMEPLUGINNAME" is not a real plugin, so the numbers
+  #here won't be used by anyone (but will show up when ncplugin_dumpexample is run).
+  1.0        -0.05 1e20 enable_super_physics
+  1 1 2 3 5 8 13 21 34 55 true
