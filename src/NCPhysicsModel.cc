@@ -36,7 +36,6 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
                     <<" section should be two numbers on a single line");
 
   //Parse and validate values:
-  std::vector<std::string> hej = data.at(0);
   double sigma, lambda_cutoff;
   if ( ! NC::safe_str2dbl( data.at(0).at(0), sigma )
        || ! NC::safe_str2dbl( data.at(0).at(1), lambda_cutoff )
