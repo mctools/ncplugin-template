@@ -25,13 +25,8 @@ namespace NCPluginNamespace {
     static bool isApplicable( const NC::Info& );
     static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
 
-    //The dummy model we are implementing is completely nonsense from a physics
-    //point of view, and provides a constant sigma for wavelengths below a
-    //certain cutoff value. Scatterings are isotropic and elastic.
-
-    //Constructor gets constant cross section value, and the neutron wavelength
-    //cutoff:
-    PhysicsModel( double sigma, double lambda_cutoff );
+    //Constructor gets the constants of the piecewise power fit:
+    PhysicsModel( double A1, double b1, double A2, double b2, double Q0, double sigma0 );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -43,8 +38,12 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    double m_sigma;
-    double m_cutoffekin;
+    double m_A1;
+    double m_b1;
+    double m_A2;
+    double m_b2;
+    double m_Q0;
+    double m_sigma0;
   };
 
 }

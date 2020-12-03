@@ -67,8 +67,8 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 {
   //Must return value >0 if we should do something, and a value higher than
   //100 means that we take precedence over the standard NCrystal factory:
-  if (!cfg.get_incoh_elas())
-    return 0;//incoherent-elastic disabled, never do anything.
+  //if (!cfg.get_incoh_elas())
+  //  return 0;//incoherent-elastic disabled, never do anything.
 
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
@@ -87,12 +87,8 @@ NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::Mat
 
   auto sc_ourmodel = NC::makeRC<PluginScatter>(PhysicsModel::createFromInfo(*globalCreateInfo(cfg)));
 
-  //Now we just need to combine this with all the other physics
-  //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for
-  //incoherent-elastic physics of course since we are now dealing with that
-  //ourselves:
   auto cfg2 = cfg.clone();
-  cfg2.set_incoh_elas(false);
+  cfg2.set_scatfactory("stdscat"); //select the standard one
   auto sc_std = globalCreateScatter(cfg2);
 
   //Combine and return:
