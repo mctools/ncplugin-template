@@ -95,7 +95,14 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
 {
   ScatEvent result;
   double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k =  4*std::acos(0.0)/lambda; //wavevector
+  double k = 2*NC::kPi/lambda; //wavevector
+  
+  //section for energy limits
+  /*if ( ! (neutron_ekin > 1) ) {
+    result.ekin_final = neutron_ekin;
+    result.mu = 1.0;
+    return result;
+  }*/
 
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
