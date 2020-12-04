@@ -29,6 +29,7 @@
 *.app
 
 __pycache__/
+.vscode/
 
 #Miscellaneous:
 .DS_Store
