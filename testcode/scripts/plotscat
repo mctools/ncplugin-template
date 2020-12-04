@@ -5,7 +5,7 @@ import NCrystal as NC
 import numpy as np
 import matplotlib.pyplot as plt
 
-physmodel = ncplugin.PhysicsModel(sigma=2.0,lambda_cutoff=5.0)
+physmodel = ncplugin.PhysicsModel(A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=1)
 
 nsample = int(1e6)#Warning consumes nsample*8 bytes of memory, so don't be silly
                   #and put to 1e10 (if such large numbers are needed, rewrite
