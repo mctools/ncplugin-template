@@ -30,8 +30,10 @@ namespace NCPluginNamespace {
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
+    //Sample scattering vector from inverse CDF (rng is random number stream).
+    double sampleScatteringVector( NC::RandomBase& rng, double neutron_ekin ) const;
 
-    //Sample scattering event (rng is random number stream). Results are given
+    //Sample scattering event. Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
     struct ScatEvent { double ekin_final, mu; };
     ScatEvent sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const;

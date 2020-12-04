@@ -77,9 +77,26 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
   return total_sigma;
 }
 
+double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double neutron_ekin ) const 
+{
+  double rand = rng.generate();
+  double Q;
+  //sample a random scattering vector Q from the inverse CDF (see plugin readme)
+  double ratio_sigma = m_sigma0/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
+  double CDF_Q0 = (m_A1*pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
+  if(rand < CDF_Q0){
+    Q = pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/m_b1+2);
+  } else {
+    Q = pow((rand/ratio_sigma - m_A1/(m_b1+2)*pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/m_b2+2);
+  }
+  
+  return Q;
+}
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
 {
   ScatEvent result;
+  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
+  double k =  4*std::acos(0.0)/lambda; //wavevector
 
   if ( ! (neutron_ekin > 1) ) {
     //Special case: We are asked to sample a scattering event for a neutron
@@ -94,18 +111,7 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
 
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
-  double Q;
-  //sample a random scattering vector Q from the inverse CDF (see plugin readme)
-  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k =  4*std::acos(0.0)/lambda; //wavevector
-  double ratio_sigma = m_sigma0/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
-  double CDF_Q0 = ( m_A1*pow(m_Q0, m_b1+2)/(m_b1+2) )*ratio_sigma;
-  if(&rng < CDF_Q0){
-    Q = pow(((m_b1+2)*&rng/m_A1)/ratio_sigma, m_b1+2)
-  } else {
-    Q = pow((&rng/ratio_sigma - m_A1/(m_b1+2)*pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, m_b1+2)
-  }
-  result.mu = 1-0.5*pow(Q/k,2);
+  result.mu = 1-0.5*pow(sampleScatteringVector(rng, neutron_ekin)/k,2);
 
   return result;
 }
