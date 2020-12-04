@@ -5,15 +5,23 @@ import NCrystal as NC
 import numpy as np
 import matplotlib.pyplot as plt
 
-physmodel = ncplugin.PhysicsModel(A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=1)
+physmodel = ncplugin.PhysicsModel( A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=10)
 
 print('cross section @   3.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(3.0)) )
 print('cross section @   7.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(7.0)) )
 print('cross section @   0.5 eV : %g barn'%physmodel.calcCrossSection( 0.5 ) )
 print('cross section @ 0.001 eV : %g barn'%physmodel.calcCrossSection( 0.001 ) )
 
-wls = np.linspace(0.01,10.0,1000)
-plt.plot( wls, physmodel.calcCrossSection(NC.wl2ekin(wls)) )
-plt.xlabel('angstrom')
+#wls = np.linspace(0.01,10.0,1000)
+#plt.plot( wls, physmodel.calcCrossSection(NC.wl2ekin(wls)) )
+#plt.xlabel('angstrom')
+#plt.ylabel('barn')
+#plt.show()
+
+ekin = np.linspace(0.0001,10.0,1000000)
+plt.plot( ekin, physmodel.calcCrossSection(ekin) )
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('eV')
 plt.ylabel('barn')
 plt.show()
