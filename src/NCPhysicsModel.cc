@@ -94,8 +94,6 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
 {
   ScatEvent result;
-  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k = 2*NC::kPi/lambda; //wavevector
   
   //section for energy limits
   /*if ( ! (neutron_ekin > 1) ) {
@@ -107,7 +105,8 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
   double Q = sampleScatteringVector(rng, neutron_ekin);
-  result.mu = 1-0.5*(Q/k)*(Q/k);
+  double ksquared = NC::k4PiSq * NC::ekin2wlsqinv(neutron_ekin);
+  result.mu = 1-0.5*(Q*Q/ksquared);
 
   return result;
 }
