@@ -72,8 +72,8 @@ NCP::PhysicsModel::PhysicsModel( double A1, double b1, double A2, double b2, dou
 double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
   double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k =  4*std::acos(0.0)/lambda; //wavevector
-  double total_sigma = (m_sigma0/(2*k))*(m_A1/(m_b1+2)*pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*pow(2*k,m_b2+2) - m_A2/(m_b2+2)*pow(m_Q0,m_b2+2));
+  double k =  2*NC::kPi/lambda; //wavevector
+  double total_sigma = (m_sigma0/(2*k))*(m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(2*k,m_b2+2) - m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2));
   return total_sigma;
 }
 
@@ -83,11 +83,11 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
   double Q;
   //sample a random scattering vector Q from the inverse CDF (see plugin readme)
   double ratio_sigma = m_sigma0/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
-  double CDF_Q0 = (m_A1*pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
+  double CDF_Q0 = (m_A1*std::pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
   if(rand < CDF_Q0){
-    Q = pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/m_b1+2);
+    Q = std::pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/m_b1+2);
   } else {
-    Q = pow((rand/ratio_sigma - m_A1/(m_b1+2)*pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/m_b2+2);
+    Q = std::pow((rand/ratio_sigma - m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/m_b2+2);
   }
   return Q;
 }
@@ -97,20 +97,10 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   double lambda = NC::ekin2wl(neutron_ekin); //wavelength
   double k =  4*std::acos(0.0)/lambda; //wavevector
 
-  if ( ! (neutron_ekin > 1) ) {
-    //Special case: We are asked to sample a scattering event for a neutron
-    //energy where we have zero cross section! Although in a real simulation we
-    //would usually not expect this to happen, users with custom code might
-    //still generate such calls. The only consistent thing to do when the cross
-    //section is zero is to not change the neutron state parameters, which means:
-    result.ekin_final = neutron_ekin;
-    result.mu = 1.0;
-    return result;
-  }
-
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
-  result.mu = 1-0.5*pow(sampleScatteringVector(rng, neutron_ekin)/k,2);
+  double Q = sampleScatteringVector(rng, neutron_ekin);
+  result.mu = 1-0.5*(Q/k)*(Q/k);
 
   return result;
 }
