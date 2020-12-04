@@ -89,7 +89,6 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
   } else {
     Q = pow((rand/ratio_sigma - m_A1/(m_b1+2)*pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/m_b2+2);
   }
-  
   return Q;
 }
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
