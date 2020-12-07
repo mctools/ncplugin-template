@@ -29,6 +29,7 @@
 *.app
 
 __pycache__/
+build/
 
 #Miscellaneous:
 .DS_Store
