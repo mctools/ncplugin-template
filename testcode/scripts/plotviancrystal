@@ -23,7 +23,7 @@ b1=-1.33605
 A2=0.0519763
 b2=-3.97314
 Q0=0.0510821
-sigma0=1
+sigma0=10
 version = 1.0
 
 dummyal="""NCMAT v3
@@ -123,24 +123,23 @@ NC.registerInMemoryFileData('customDiamond.ncmat', dummyal+customsection)
 
 ######################################################################
 #
-# Create physics model with/without our custom replacement of the
-# incoherent-elastic componnent, by loading the files we just registered
-# above:
+# Create physics model with/without our custom replacement 
 #
 sc_std = NC.createScatter("stdDiamond.ncmat")
-sc_std_incelas_only = NC.createScatter("stdDiamond.ncmat;inelas=0;coh_elas=0")
+#sc_std_incelas_only = NC.createScatter("stdDiamond.ncmat;inelas=0;coh_elas=0")
 sc_plugin = NC.createScatter("customDiamond.ncmat")
-sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
+#sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
 
 ######################################################################
 #
 # Plot with matplotlib:
 #
-wls = np.linspace(0.01,10.0,1000)
-plt.plot( wls, sc_std.xsect(wl=wls), label='Standard NCrystal' )
-plt.plot( wls, sc_plugin.xsect(wl=wls), label='With new plugin' )
-plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
-plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
+#wls = np.linspace(0.01,10.0,1000)
+ekins = np.linspace(1e-4,1,100000)
+plt.plot( ekins, sc_std.xsect(wl=NC.ekin2wl(ekins)), label='Standard NCrystal' )
+plt.plot( ekins, sc_plugin.xsect(wl=NC.ekin2wl(ekins)), label='With SANS' )
+#plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
+#plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
 
 ######################################################################
 #
@@ -149,16 +148,16 @@ plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [onl
 # infrastructure:
 #
 pm = ncplugin.PhysicsModel( A1=A1, b1=b1, A2=A2, b2=b2, Q0=Q0, sigma0=sigma0)
-plt.plot(wls, pm.calcCrossSection(NC.wl2ekin(wls)),
-         ls=':',lw=3,label='Directly from new PhysicsModel')
+plt.plot(ekins, pm.calcCrossSection(ekins),
+         ls=':',lw=3,label='Only SANS')
 
 ######################################################################
 #
 # Finish and launch plot:
 #
-plt.xlabel('angstrom')
-plt.ylabel('barn')
+plt.xlabel('Energy (eV)')
+plt.ylabel('Total Cross Section (barn)')
 plt.legend()
-plt.grid()
-plt.semilogy()
+plt.grid(which='both', linestyle=':')
+plt.loglog()
 plt.show()
