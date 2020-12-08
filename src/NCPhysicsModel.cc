@@ -73,7 +73,7 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
   double lambda = NC::ekin2wl(neutron_ekin); //wavelength
   double k =  2*NC::kPi/lambda; //wavevector
-  double total_sigma = (m_sigma0/(2*k))*(m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(2*k,m_b2+2) - m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2));
+  double total_sigma = (m_sigma0/(2*k*k))*(m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(2*k,m_b2+2) - m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2));
   return total_sigma;
 }
 
