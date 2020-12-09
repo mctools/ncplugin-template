@@ -10,6 +10,7 @@ import NCrystal as NC
 import ncplugin#<--- our own module developed here
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas
 ncplugin.registerPlugin()#<---register our plugin with NCrystal
 
 ######################################################################
@@ -23,7 +24,7 @@ b1=-1.33605
 A2=0.0519763
 b2=-3.97314
 Q0=0.0510821
-sigma0=10
+sigma0=5.551
 version = 1.0
 
 dummyal="""NCMAT v3
@@ -135,7 +136,8 @@ sc_plugin = NC.createScatter("customDiamond.ncmat")
 # Plot with matplotlib:
 #
 #wls = np.linspace(0.01,10.0,1000)
-ekins = np.linspace(1e-4,1,100000)
+plt.figure(num='Benchmark')
+ekins = np.linspace(1e-5,100,1000000)
 plt.plot( ekins, sc_std.xsect(wl=NC.ekin2wl(ekins)), label='Standard NCrystal' )
 plt.plot( ekins, sc_plugin.xsect(wl=NC.ekin2wl(ekins)), label='With SANS' )
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
@@ -149,15 +151,35 @@ plt.plot( ekins, sc_plugin.xsect(wl=NC.ekin2wl(ekins)), label='With SANS' )
 #
 pm = ncplugin.PhysicsModel( A1=A1, b1=b1, A2=A2, b2=b2, Q0=Q0, sigma0=sigma0)
 plt.plot(ekins, pm.calcCrossSection(ekins),
-         ls=':',lw=3,label='Only SANS')
+         ls=':',lw=1, color='dimgray',label='Only SANS')
 
 ######################################################################
-#
-# Finish and launch plot:
-#
+teshi_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/teshi.dat", sep=" ")
+vesuvio_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/vesuvio.dat", sep=" ")
+njoy_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/njoy_calc.txt", sep=" ")
+plt.scatter(teshi_data["E"],teshi_data["xs"], s=15, facecolors='none', edgecolors='r', label='Teshigawara [2019]')
+plt.scatter(vesuvio_data["E"],vesuvio_data["xs"],s=15, facecolors='none', edgecolors='g',label='VESUVIO exp.[2019]')
+plt.scatter(njoy_data["E"],njoy_data["xs"],s=15, facecolors='none', edgecolors='b',label='Granada [2020]')
+
 plt.xlabel('Energy (eV)')
 plt.ylabel('Total Cross Section (barn)')
 plt.legend()
 plt.grid(which='both', linestyle=':')
 plt.loglog()
+
+## RESIDUAL PLOT
+plt.figure(num='Residual')
+plt.step( teshi_data["E"], (sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])) - teshi_data["xs"])/teshi_data["xs"], where='mid',lw=1,label='From Teshigawara' )
+plt.step( vesuvio_data["E"], (sc_plugin.xsect(wl=NC.ekin2wl(vesuvio_data["E"])) - vesuvio_data["xs"])/vesuvio_data["xs"], lw=1, where='mid',label='From VESUVIO exp' )
+plt.step( njoy_data["E"],( sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])) - njoy_data["xs"])/njoy_data["xs"], where='mid',lw=1,label='From Granada' )
+
+plt.xlabel('Energy (eV)')
+plt.ylabel(' Relative total Cross Section residual')
+
+plt.legend()
+plt.grid(which='both', linestyle=':')
+plt.xscale('log')
+
+
 plt.show()
+
