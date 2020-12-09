@@ -31,6 +31,13 @@
 __pycache__/
 build/
 
+testcode/data/njoy_calc.txt
+testcode/data/teshi.dat
+testcode/data/vesuvio_unc.dat
+testcode/data/vesuvio.dat
+testcode/data/vesuvio_4mm.inp
+
+
 #Miscellaneous:
 .DS_Store
 vgcore.*
