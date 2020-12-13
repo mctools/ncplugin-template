@@ -157,9 +157,9 @@ plt.plot(ekins, pm.calcCrossSection(ekins),
 teshi_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/teshi.dat", sep=" ")
 vesuvio_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/vesuvio.dat", sep=" ")
 njoy_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/njoy_calc.txt", sep=" ")
-plt.scatter(teshi_data["E"],teshi_data["xs"], s=15, facecolors='none', edgecolors='r', label='Teshigawara [2019]')
-plt.scatter(vesuvio_data["E"],vesuvio_data["xs"],s=15, facecolors='none', edgecolors='g',label='VESUVIO exp.[2019]')
-plt.scatter(njoy_data["E"],njoy_data["xs"],s=15, facecolors='none', edgecolors='b',label='Granada [2020]')
+plt.scatter(teshi_data["E"],teshi_data["xs"], s=15, facecolors='none', edgecolors='r', label='Teshigawara at al. [2019]')
+plt.scatter(vesuvio_data["E"],vesuvio_data["xs"],s=15, facecolors='none', edgecolors='g',label='VESUVIO exp. [2019]')
+plt.scatter(njoy_data["E"],njoy_data["xs"],s=15, facecolors='none', edgecolors='b',label='Granada et al. [2020]')
 
 plt.xlabel('Energy (eV)')
 plt.ylabel('Total Cross Section (barn)')
@@ -169,13 +169,16 @@ plt.loglog()
 
 ## RESIDUAL PLOT
 plt.figure(num='Residual')
-plt.step( teshi_data["E"], (sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])) - teshi_data["xs"])/teshi_data["xs"], where='mid',lw=1,label='From Teshigawara' )
-plt.step( vesuvio_data["E"], (sc_plugin.xsect(wl=NC.ekin2wl(vesuvio_data["E"])) - vesuvio_data["xs"])/vesuvio_data["xs"], lw=1, where='mid',label='From VESUVIO exp' )
-plt.step( njoy_data["E"],( sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])) - njoy_data["xs"])/njoy_data["xs"], where='mid',lw=1,label='From Granada' )
+#plt.step( ekins,(sc_plugin.xsect(ekins) - sc_std.xsect(ekins))/sc_std.xsect(ekins), where='mid',lw=1,label='With SANS' )
+plt.step( teshi_data["E"], (teshi_data["xs"]-sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])), where='mid',color='r',lw=1,label='Teshigawara et al.')
+plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='g', where='mid',label='VESUVIO exp' )
+plt.step( njoy_data["E"],(njoy_data["xs"] - sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])), where='mid',lw=1,color='b', label='Granada et al.' )
 
+ 
 plt.xlabel('Energy (eV)')
-plt.ylabel(' Relative total Cross Section residual')
+plt.ylabel('')
 
+plt.title('Residual Total Cross Section relative to NCrystal+SANS')
 plt.legend()
 plt.grid(which='both', linestyle=':')
 plt.xscale('log')

@@ -4,6 +4,8 @@
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
 
+#include <iostream>
+
 bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
 {
   //Accept if input is NCMAT data with @CUSTOM_SANSND section:
@@ -85,10 +87,18 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
   double ratio_sigma = m_sigma0/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
   double CDF_Q0 = (m_A1*std::pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
   if(rand < CDF_Q0){
-    Q = std::pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/m_b1+2);
+    //DEGUB ONLY
+    std::cout << "DEBUG ONLY! EQUAZIONE 1 with rand "  << rand << std::endl;
+    Q = std::pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/(m_b1+2));
   } else {
-    Q = std::pow((rand/ratio_sigma - m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/m_b2+2);
+    //std::cout << "DEBUG ONLY! EQUAZIONE 2 with rand "  << rand << std::endl;
+    std::cout << "DEBUG ONLY! EQUAZIONE 2 with rand "  << rand << " with H "  << (rand/ratio_sigma-(m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2<< std::endl;
+    Q = (rand/ratio_sigma - (m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2;
   }
+  //DEGUB ONLY
+  std::cout << "DEBUG ONLY! ratio sigma: " << ratio_sigma << std::endl;
+  std::cout << "DEBUG OBLY! CDF_Q0: " << CDF_Q0 << std::endl;
+  
   return Q;
 }
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
@@ -105,6 +115,7 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
   double Q = sampleScatteringVector(rng, neutron_ekin);
+  std::cout << "DEBUG ONLY Q:" << Q << std::endl; 
   double ksquared = NC::k4PiSq * NC::ekin2wlsqinv(neutron_ekin);
   result.mu = 1-0.5*(Q*Q/ksquared);
 
