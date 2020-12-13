@@ -76,7 +76,7 @@ Usage:
                                full reconfiguration and rebuild (as opposed to
                                just an incremental build). Ideally, this should
                                never be needed, but it is here as a fall-back
-                               option in case something doesn't work as expected.
+                               option in case something does not work as expected.
 
   ncpluginbuild (--clear|-c) : clean bld output, environment variables and even
                                delete the ncpluginbuild command. (you must
@@ -124,7 +124,7 @@ END
     fi
     local oldargs
     local newargs
-    oldargs=$(cat ${_ncpblddir}/ncplugin_usercmakeargs.txt 2>/dev/null || echo '..<n/a>..')
+    oldargs=$(cat ${_ncpblddir}/ncplugin_usercmakeargs.txt 2>/dev/null || echo "..<n/a>..")
     newargs="$(echo "$@")"
     if [ -f "${_ncpblddir}"/CMakeCache.txt -a x"$oldargs" != x"$newargs" ]; then
         echo "ncpluginbuild: Argument changes detected. Auto-enabling --force mode."
@@ -150,7 +150,7 @@ END
     fi
     (
         #Build (respect CMAKE_BUILD_PARALLEL_LEVEL if set, otherwise detect):
-        export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:-$(python3 -c 'import os;print(os.cpu_count())')}
+        export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:-$(python3 -c "import os;print(os.cpu_count())")}
         if [ $? != 0 ]; then
             echo "ncpluginbuild: ERROR could not determine number of processes to use for build. Please set CMAKE_BUILD_PARALLEL_LEVEL env var and rerun"
             return 1
