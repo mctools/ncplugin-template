@@ -83,21 +83,17 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
 {
   double rand = rng.generate();
   double Q;
+  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
+  double k =  2*NC::kPi/lambda; //wavevector
   //sample a random scattering vector Q from the inverse CDF (see plugin readme)
-  double ratio_sigma = m_sigma0/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
+  double ratio_sigma = (m_sigma0/(2*k*k))/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
   double CDF_Q0 = (m_A1*std::pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
   if(rand < CDF_Q0){
-    //DEGUB ONLY
-    std::cout << "DEBUG ONLY! EQUAZIONE 1 with rand "  << rand << std::endl;
     Q = std::pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/(m_b1+2));
   } else {
-    //std::cout << "DEBUG ONLY! EQUAZIONE 2 with rand "  << rand << std::endl;
-    std::cout << "DEBUG ONLY! EQUAZIONE 2 with rand "  << rand << " with H "  << (rand/ratio_sigma-(m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2<< std::endl;
-    Q = (rand/ratio_sigma - (m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2;
+    Q = std::pow((rand/ratio_sigma - (m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/(m_b2+2));
   }
-  //DEGUB ONLY
-  std::cout << "DEBUG ONLY! ratio sigma: " << ratio_sigma << std::endl;
-  std::cout << "DEBUG OBLY! CDF_Q0: " << CDF_Q0 << std::endl;
+
   
   return Q;
 }
@@ -115,7 +111,6 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
   double Q = sampleScatteringVector(rng, neutron_ekin);
-  std::cout << "DEBUG ONLY Q:" << Q << std::endl; 
   double ksquared = NC::k4PiSq * NC::ekin2wlsqinv(neutron_ekin);
   result.mu = 1-0.5*(Q*Q/ksquared);
 

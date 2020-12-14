@@ -11,18 +11,16 @@ nsample = int(1e6)#Warning consumes nsample*8 bytes of memory, so don't be silly
                   #and put to 1e10 (if such large numbers are needed, rewrite
                   #code below as loop which samples e.g. 1e6 at a time).
 
-nbins = 100
-for wl in range(1,20,2):
+nbins = 180
+for wl in np.arange(22,0.5,-7):
     muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
-    physmodel.
     print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
-    print(f"DEBUG:!")
-    plt.hist( np.rad2deg(np.arccos(muvals)), bins=nbins,alpha=0.4 )
+    plt.hist( np.rad2deg(np.arccos(muvals)), bins=nbins,alpha=0.5, label=f'wavelength {wl} Å')
 
 #An isotropic distrigbution is constant wrt mu:
 #plt.plot( [0.9,1.0],[len(muvals)/nbins]*2 ,label = 'Isotropic', color='red' )
 
 plt.title(r'$\theta=\cos^{-1}(\mu)$' + f' distribution in {float(len(muvals)):g} scattering events')
-#plt.legend()
-
+plt.legend()
+plt.yscale('log')
 plt.show()

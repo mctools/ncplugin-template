@@ -36,6 +36,7 @@ testcode/data/teshi.dat
 testcode/data/vesuvio_unc.dat
 testcode/data/vesuvio.dat
 testcode/data/vesuvio_4mm.inp
+testcode/scripts/plotradicand.py
 
 
 #Miscellaneous:

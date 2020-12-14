@@ -87,9 +87,7 @@ NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::Mat
 
   auto sc_ourmodel = NC::makeRC<PluginScatter>(PhysicsModel::createFromInfo(*globalCreateInfo(cfg)));
 
-  auto cfg2 = cfg.clone();
-  cfg2.set_scatfactory("stdscat"); //select the standard one
-  auto sc_std = globalCreateScatter(cfg2);
+  auto sc_std = globalCreateScatter(cfg);
 
   //Combine and return:
   return combineScatterObjects( sc_std,
