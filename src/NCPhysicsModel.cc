@@ -73,8 +73,7 @@ NCP::PhysicsModel::PhysicsModel( double A1, double b1, double A2, double b2, dou
 
 double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
-  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k =  2*NC::kPi/lambda; //wavevector
+  double k =  NC::k2Pi/ NC::ekin2wl(neutron_ekin); //wavevector
   double total_sigma = (m_sigma0/(2*k*k))*(m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(2*k,m_b2+2) - m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2));
   return total_sigma;
 }
@@ -83,8 +82,7 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
 {
   double rand = rng.generate();
   double Q;
-  double lambda = NC::ekin2wl(neutron_ekin); //wavelength
-  double k =  2*NC::kPi/lambda; //wavevector
+  double k =  NC::k2Pi/NC::ekin2wl(neutron_ekin); //wavevector
   //sample a random scattering vector Q from the inverse CDF (see plugin readme)
   double ratio_sigma = (m_sigma0/(2*k*k))/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
   double CDF_Q0 = (m_A1*std::pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
@@ -111,8 +109,8 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   //Implement our actual model here:
   result.ekin_final = neutron_ekin;//Elastic
   double Q = sampleScatteringVector(rng, neutron_ekin);
-  double ksquared = NC::k4PiSq * NC::ekin2wlsqinv(neutron_ekin);
-  result.mu = 1-0.5*(Q*Q/ksquared);
+  double ksquared = NC::k4PiSq*NC::ekin2wlsqinv(neutron_ekin);
+  result.mu = 1-0.125*(Q*Q/ksquared);
 
   return result;
 }
