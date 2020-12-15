@@ -110,7 +110,7 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   result.ekin_final = neutron_ekin;//Elastic
   double Q = sampleScatteringVector(rng, neutron_ekin);
   double ksquared = NC::k4PiSq*NC::ekin2wlsqinv(neutron_ekin);
-  result.mu = 1-0.125*(Q*Q/ksquared);
+  result.mu = 1-0.5*(Q*Q/ksquared);
 
   return result;
 }
