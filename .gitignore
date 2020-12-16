@@ -43,3 +43,10 @@ testcode/scripts/plotradicand.py
 .DS_Store
 vgcore.*
 .vscode/
+testcode/data/openmc_fwd.dat
+testcode/data/nesvi.dat
+testcode/data/openmc_bkw.dat
+testcode/data/F4690504.tmp:Zone.Identifier
+testcode/data/AA6BE253.tmp:Zone.Identifier
+testcode/data/9CC7D60B.tmp:Zone.Identifier
+testcode/data/3DCFA2D9.tmp:Zone.Identifier
