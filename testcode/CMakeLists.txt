@@ -8,7 +8,7 @@ project(NCPluginTestCode_${NCPlugin_NAME} LANGUAGES CXX)
 
 option(NCPLUGIN_INSTALLSYMLINKS "Use symlinks when installing non-binary files (thus developers can avoid a build+install step when editing scripts and data files)" OFF)
 
-find_package(NCrystal 2.1.99 REQUIRED)
+find_package(NCrystal 2.3.1 REQUIRED)
 
 function(install_maybe_as_symlink installtype file)
   #Apparently cmake will install as symlinks if we first create the symlinks in

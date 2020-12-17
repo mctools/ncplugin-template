@@ -67,6 +67,13 @@ NCP::PhysicsModel::PhysicsModel( double A1, double b1, double A2, double b2, dou
     m_Q0(Q0),
     m_sigma0(sigma0)
 {
+  //Important note to developers who are using the infrastructure in the
+  //testcode/ subdirectory: If you change the number or types of the arguments
+  //for the constructor here, you should make sure to perform a corresponding
+  //change in three files in the testcode/ directory: _cbindings.py,
+  //__init__.py, and NCForPython.cc - that way you can still instantiate your
+  //model directly from your python test code).
+
   nc_assert( m_Q0 > 0.0 );
   nc_assert( m_sigma0 > 0.0 );
 }
