@@ -22,5 +22,6 @@ for wl in np.arange(22,0.5,-7):
 
 plt.title(r'$\mu=\cos(\theta)$' + f' distribution in {float(len(muvals)):g} scattering events')
 plt.legend()
+plt.xlabel(r'$\mu=\cos(\theta)$')
 plt.yscale('log')
 plt.show()
