@@ -8,7 +8,7 @@ project(NCPluginTestCode_${NCPlugin_NAME} LANGUAGES CXX)
 
 option(NCPLUGIN_INSTALLSYMLINKS "Use symlinks when installing non-binary files (thus developers can avoid a build+install step when editing scripts and data files)" OFF)
 
-find_package(NCrystal 2.3.1 REQUIRED)
+find_package(NCrystal 2.4.0 REQUIRED)
 
 function(install_maybe_as_symlink installtype file)
   #Apparently cmake will install as symlinks if we first create the symlinks in
@@ -100,14 +100,29 @@ foreach(scriptfile ${testcode_scripts})
 endforeach()
 
 #Install (possibly as symlinks) the data files:
+function(install_datafiles datafiles datasubdir)
+  foreach(datafile ${datafiles})
+    get_filename_component( datafilebn "${datafile}" NAME)
+    if (datafilebn MATCHES "(#|~| )+")
+      #avoid temporary files left around by editors, etc.
+      message("----> Ignoring data file with invalid name: ${datafilebn}")
+      continue()
+    endif()
+    if (datasubdir)
+      set(availname "${datasubdir}/${datafilebn}")
+      set(dest "/${datasubdir}")
+    else()
+      set(availname "${datafilebn}")
+      set(dest "")
+    endif()
+    message("----> Will install ${datafilebn} to be available as ${availname}")
+    install_maybe_as_symlink(FILES "${datafile}" DESTINATION share/${PROJECT_NAME}/data${dest})
+  endforeach()
+endfunction()
+
+#Make test .ncmat files available as ncplugin/<filename>:
 srcfileglob( testcode_datafiles  "data/*.ncmat" )
-foreach(datafile ${testcode_datafiles})
-  get_filename_component( datafilebn "${datafile}" NAME)
-  if (datafilebn MATCHES "(#|~| )+")
-    #avoid temporary files left around by editors, etc.
-    message("----> Ignoring data file with invalid name: ${datafilebn}")
-    continue()
-  endif()
-  message("----> Will install data/${datafilebn} as ncplugin/${datafilebn}")
-  install_maybe_as_symlink(FILES "${datafile}" DESTINATION share/${PROJECT_NAME}/data/ncplugin)
-endforeach()
+install_datafiles("${testcode_datafiles}" ncplugin)
+
+#Also make the public data files provided by the plugin available:
+install_datafiles("${plugin_datafiles}" "")
