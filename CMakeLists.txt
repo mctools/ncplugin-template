@@ -46,9 +46,10 @@ endfunction()
 srcfileglob( plugin_srcfiles "src/*.cc" )
 srcfileglob( plugin_hdrfiles  "include/*.hh" )
 srcfileglob( plugin_hdrfiles_icc  "include/*.icc" )
+srcfileglob( plugin_datafiles  "data/*.ncmat" )
 list(APPEND plugin_hdrfiles ${plugin_hdrfiles_icc})
-srcfileglob( dummy "src/*.hh" )
-srcfileglob( dummy "src/*.cc" )
+srcfileglob( dummy "src/*.hh" )#To trigger reconf
+srcfileglob( dummy "src/*.icc" )#To trigger reconf
 
 if (NCPLUGIN_ASBUILTIN)
   #Special mode which does almost nothing.
@@ -60,6 +61,7 @@ if (NCPLUGIN_ASBUILTIN)
     message(FATAL_ERROR "NCPLUGIN_ASBUILTIN option can only be used when the plugin project is a sub-project")
   endif()
   set(NCPLUGIN_SRCFILES ${plugin_srcfiles} PARENT_SCOPE)#<--- pass up variable to parent project
+  set(NCPLUGIN_DATAFILES ${plugin_datafiles} PARENT_SCOPE)#<--- pass up variable to parent project
   set(NCPLUGIN_COMPILEDEFS NCPLUGIN_NAME=${NCPlugin_NAME} NCPLUGIN_ASBUILTIN PARENT_SCOPE)
   set(NCPLUGIN_INCDIRS ${PROJECT_SOURCE_DIR}/include PARENT_SCOPE)
   return()
@@ -67,7 +69,7 @@ endif()
 
 #Standard build, need NCrystal as dependency:
 
-find_package(NCrystal 2.3.1 REQUIRED)
+find_package(NCrystal 2.4.0 REQUIRED)
 
 if ( NCPLUGIN_DEVMODE )
   #Compile with very strict C++11 options during normal development (this gives
@@ -89,13 +91,8 @@ if ( NCPLUGIN_DEVMODE )
   endif()
 endif()
 
-if (NCPLUGIN_DEVMODE)
-  #Expose plugin header files (to testing code):
-  install(FILES ${plugin_hdrfiles} DESTINATION include/${PROJECT_NAME})
-endif()
-
 #The actual plugin should be build as a shared library. In case it is ever
-#needed, we export everything for possible downstream development: header files,
+#needed, we export everything for possible downstream usage: header files,
 #targets, and cmake cfg files:
 add_library( pluginlib SHARED ${plugin_srcfiles} )
 target_compile_definitions( pluginlib PRIVATE NCPLUGIN_NAME=${NCPlugin_NAME} )
@@ -116,6 +113,33 @@ configure_file( "${PROJECT_SOURCE_DIR}/PkgConfig.cmake.in"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY )
 install( FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" DESTINATION lib/cmake )
+
+#For simplicity, any data files are embedded directly in the library (except in
+#NCPLUGIN_DEVMODE where the testcode project will make them available via
+#symlinks):
+if (plugin_datafiles AND NOT NCPLUGIN_DEVMODE)
+  #Check that data file name follows convention: ncplugin-<pluginname>_*.ncmat:
+  foreach(df ${plugin_datafiles})
+    get_filename_component(dfbn "${df}" NAME)
+    if(NOT dfbn MATCHES "ncplugin-${NCPlugin_NAME}_.+\.ncmat")
+      message(FATAL_ERROR "ERROR: name of exported datafile ${dfbn} does not have required form: ncplugin-${NCPlugin_NAME}_*.ncmat")
+    endif()
+  endforeach()
+  if (NOT NCrystal_CMD_NCMAT2CPP)
+    message(FATAL_ERROR "ERROR: NCrystal installation does not provide ncrystal_ncmat2cpp command which is needed to embed datafiles in plugin.")
+  endif()
+  #Generate C++ code from the .ncmat files:
+  execute_process(COMMAND "${NCrystal_CMD_NCMAT2CPP}"
+    "-n" "NCPluginNamespace::registerDataFiles"
+    --include NCrystal/NCPluginBoilerplate.hh
+    "-o" "${PROJECT_BINARY_DIR}/autogen_${NCPlugin_NAME}_ncmat_data.cc" ${plugin_datafiles} RESULT_VARIABLE status )
+  if(status AND NOT status EQUAL 0)
+    message(FATAL_ERROR "Failure while trying to invoke ncrystal_ncmat2cpp (from ${NCrystal_CMD_NCMAT2CPP}).")
+  endif()
+  target_sources(pluginlib PRIVATE "${PROJECT_BINARY_DIR}/autogen_${NCPlugin_NAME}_ncmat_data.cc")#too late to just append to plugin_srcfiles
+  target_compile_definitions(pluginlib PRIVATE NCPLUGIN_DO_REGISTERDATAFILES)
+  message("-- Generated autogen_${NCPlugin_NAME}_ncmat_data.cc with embedded NCMAT data (will be compiled into the plugin library).")
+endif()
 
 if ( NCPLUGIN_DEVMODE )
   #Development code:
