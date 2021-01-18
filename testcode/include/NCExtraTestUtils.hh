@@ -14,13 +14,13 @@
 // NCrystal python module, the extra code here is just to show how one can
 // directly access the internal helper classes used in the plugin from Python.
 
-#include "NCPhysicsModel.hh"
+#include "NCSansIsotropic.hh"
 
 //For our C++ test applications:
 
 namespace NCPluginTestCode {
 
-  std::vector<double> sampleAngles( const NCP::PhysicsModel&, double ekin, unsigned nvalues );
+  std::vector<double> sampleAngles( const NCP::SansIsotropic&, double ekin, unsigned nvalues );
 
 }
 

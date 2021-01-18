@@ -1,5 +1,5 @@
-#ifndef NCPlugin_PhysicsModel_hh
-#define NCPlugin_PhysicsModel_hh
+#ifndef NCPlugin_SansIsotropic_hh
+#define NCPlugin_SansIsotropic_hh
 
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
@@ -15,7 +15,7 @@ namespace NCPluginNamespace {
   //We mark the class as MoveOnly, to make sure it doesn't get copied around by
   //accident (since it could easily end up having large data members).
 
-  class PhysicsModel final : public NC::MoveOnly {
+  class SansIsotropic final : public NC::MoveOnly {
   public:
 
     //A few static helper functions which can extract relevant data from NCInfo
@@ -23,7 +23,7 @@ namespace NCPluginNamespace {
     //case of syntax errors in the @CUSTOM_ section data):
 
     static bool isApplicable( const NC::Info& );
-    static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
+    static SansIsotropic createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
 
     //The dummy model we are implementing is completely nonsense from a physics
     //point of view, and provides a constant sigma for wavelengths below a
@@ -31,7 +31,7 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    PhysicsModel( double sigma, double lambda_cutoff );
+    SansIsotropic( double sigma, double lambda_cutoff );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;

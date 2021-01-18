@@ -1,16 +1,16 @@
-#include "NCPhysicsModel.hh"
+#include "NCSansIsotropic.hh"
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
 
-bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
+bool NCP::SansIsotropic::isApplicable( const NC::Info& info )
 {
   //Accept if input is NCMAT data with @CUSTOM_<pluginname> section:
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
+NCP::SansIsotropic NCP::SansIsotropic::createFromInfo( const NC::Info& info )
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error
@@ -44,10 +44,10 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
                      <<" section (should be two positive floating point values)" );
 
   //Parsing done! Create and return our model:
-  return PhysicsModel(sigma,lambda_cutoff);
+  return SansIsotropic(sigma,lambda_cutoff);
 }
 
-NCP::PhysicsModel::PhysicsModel( double sigma, double lambda_cutoff )
+NCP::SansIsotropic::SansIsotropic( double sigma, double lambda_cutoff )
   : m_sigma(sigma),
     m_cutoffekin(NC::wl2ekin(lambda_cutoff))
 {
@@ -62,14 +62,14 @@ NCP::PhysicsModel::PhysicsModel( double sigma, double lambda_cutoff )
   nc_assert( m_cutoffekin > 0.0);
 }
 
-double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
+double NCP::SansIsotropic::calcCrossSection( double neutron_ekin ) const
 {
   if ( neutron_ekin > m_cutoffekin )
     return m_sigma;
   return 0.0;
 }
 
-NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
+NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
 {
   ScatEvent result;
 
@@ -94,5 +94,3 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
 
   return result;
 }
-
-

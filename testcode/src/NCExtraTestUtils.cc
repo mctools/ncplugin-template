@@ -1,6 +1,6 @@
 #include "NCExtraTestUtils.hh"
 
-std::vector<double> NCPluginTestCode::sampleAngles( const NCP::PhysicsModel& pm, double ekin, unsigned nvalues )
+std::vector<double> NCPluginTestCode::sampleAngles( const NCP::SansIsotropic& pm, double ekin, unsigned nvalues )
 {
   std::vector<double> angles;
   angles.reserve(nvalues);

@@ -1,4 +1,4 @@
-#include "NCPhysicsModel.hh"
+#include "NCSansIsotropic.hh"
 #include <iostream>
 #include "NCrystal/internal/NCMath.hh"//for NC::linspace
 
@@ -7,7 +7,7 @@ int main()
   //Very simple test which instantiates our model and calculates a few cross
   //sections and samples a few scattering events:
 
-  auto pm = NCP::PhysicsModel( 2.0/*sigma below lambda_cutoff*/, 5.0/*lambda cutoff*/ );
+  auto pm = NCP::SansIsotropic( 2.0/*sigma below lambda_cutoff*/, 5.0/*lambda cutoff*/ );
 
   for ( auto wl : NC::linspace(0.01, 8.0, 20) ) {
     std::cout << "cross section @ " << wl << " Aa is "

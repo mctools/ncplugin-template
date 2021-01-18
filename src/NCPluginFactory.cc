@@ -1,6 +1,6 @@
 
 #include "NCPluginFactory.hh"
-#include "NCPhysicsModel.hh"
+#include "NCSansIsotropic.hh"
 #include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
 
 namespace NCPluginNamespace {
@@ -11,7 +11,7 @@ namespace NCPluginNamespace {
     //The factory wraps our custom PhysicsModel helper class in an NCrystal API
     //Scatter class.
 
-    PluginScatter( PhysicsModel && pm )
+    PluginScatter( SansIsotropic && pm )
       : ScatterIsotropic(NCPLUGIN_NAME_CSTR "Model"),
         m_pm(std::move(pm))
     {
@@ -42,7 +42,7 @@ namespace NCPluginNamespace {
   protected:
     virtual ~PluginScatter() = default;
   private:
-    PhysicsModel m_pm;
+    SansIsotropic m_pm;
   };
 
 }
@@ -73,7 +73,7 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
 
-  if ( ! PhysicsModel::isApplicable(*globalCreateInfo(cfg)) )
+  if ( ! SansIsotropic::isApplicable(*globalCreateInfo(cfg)) )
     return 0;
 
   //Ok, all good. Tell the framework that we want to deal with this, with a
@@ -85,7 +85,7 @@ NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::Mat
 {
   //Ok, we are selected as the provider! First create our own scatter model:
 
-  auto sc_ourmodel = NC::makeRC<PluginScatter>(PhysicsModel::createFromInfo(*globalCreateInfo(cfg)));
+  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIsotropic::createFromInfo(*globalCreateInfo(cfg)));
 
   //Now we just need to combine this with all the other physics
   //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for
