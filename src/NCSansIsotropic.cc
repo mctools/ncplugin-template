@@ -62,16 +62,49 @@ NCP::SansIsotropic NCP::SansIsotropic::createFromInfo( const NC::Info& info )
   return SansIsotropic(I, Q);
 }
 
-NCP::SansIsotropic::SansIsotropic( const std::vector<double>& x, const std::vector<double>& f )
-  : m_Iq(std::make_unique<LookUpTable>(x, f))
+double NCP::SansIsotropic::ekin2k(double ekin) const
+{
+  return 2.*NC::kPi/NC::ekin2wl(ekin);
+}
+
+
+NCP::SansIsotropic::SansIsotropic( const std::vector<double>& Q, const std::vector<double>& intensity )
+  : m_Iq(std::make_unique<LookUpTable>(Q, intensity, NCP::LookUpTable::Extrapolate::kConst_Zero)),
+   m_xs(std::make_unique<LookUpTable>())
 {
   m_Iq->sanityCheck();
+  std::vector<double> envec, xsvec;
+
+  envec.reserve(Q.size());
+  xsvec.reserve(Q.size());
+
+  //When Q approching zero, I(Q) is a constant,
+  //the cross section in this case is 4*pi*I(Q).
+  //This is how the first cross section point is calculated
+
+  double en=NC::wl2ekin(4*NC::kPi/Q[0]);
+  envec.push_back(en);
+  xsvec.push_back(4*NC::kPi*intensity[0]);
+
+  double accumIntegrand(0.);
+
+  for(size_t i=1;i<Q.size();i++)
+  {
+    double lastK=ekin2k(envec.back());
+    accumIntegrand = xsvec.back()*lastK*lastK;
+    accumIntegrand += NC::kPi*(Q[i]-Q[i-1])*(intensity[i]*Q[i]+intensity[i-1]*Q[i-1]);
+    double k = Q[i]*0.5;
+    envec.push_back(NC::wl2ekin(2*NC::kPi/k));
+    xsvec.push_back(accumIntegrand/(k*k));
+  }
+
+  m_xs=std::make_unique<LookUpTable>(envec, xsvec, NCP::LookUpTable::Extrapolate::kZero_Zero);
 }
 
 double NCP::SansIsotropic::calcCrossSection( double neutron_ekin ) const
 {
   //fixme
-  return 10.0+neutron_ekin*0;
+  return m_xs->get(neutron_ekin);
 }
 
 NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const

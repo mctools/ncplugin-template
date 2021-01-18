@@ -42,10 +42,13 @@ namespace NCPluginNamespace {
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
     struct ScatEvent { double ekin_final, mu; };
     ScatEvent sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const;
+    double ekin2k(double ekin) const;
 
   private:
     //Data members:
     std::unique_ptr<LookUpTable> m_Iq;
+    std::unique_ptr<LookUpTable> m_xs;
+    // std::unique_ptr<PointwiseDist> m_sansQDist;
   };
 
 }

@@ -45,13 +45,13 @@ namespace NCPluginNamespace {
   public:
     LookUpTable(const std::vector<double>& x, const std::vector<double>& f, Extrapolate extrap=Extrapolate::kConst_Zero);
     LookUpTable();
-    ~LookUpTable();
+    virtual ~LookUpTable();
     bool empty() const;
     void sanityCheck() const;
     void set(const std::vector<double>& x, const std::vector<double>& f, Extrapolate extrap=Extrapolate::kConst_Zero);
     double get(double x) const;
     void print() const;
-    double integrate(double lower_x, double upper_x);
+    virtual double integrate(double lower_x, double upper_x);
 
   private:
     void init();
