@@ -7,16 +7,16 @@
 
 extern "C" {
 
-  void nctest_getmanyxsvalues( double sigma, double lambda_cutoff, unsigned array_size, const double* ekin_array, double* output_xs_array )
+  void nctest_getmanyxsvalues( const std::vector<double>& I, const std::vector<double>& Q, unsigned array_size, const double* ekin_array, double* output_xs_array )
   {
-    NCP::SansIsotropic pm(sigma,lambda_cutoff);
+    NCP::SansIsotropic pm(I,Q);
     for (unsigned i = 0; i < array_size; ++i)
       output_xs_array[i] = pm.calcCrossSection(ekin_array[i]);
   }
 
-  void nctest_samplemanyscatmu( double sigma, double lambda_cutoff, double ekin, unsigned nvalues, double* output_mu )
+  void nctest_samplemanyscatmu( const std::vector<double>& I, const std::vector<double>& Q, double ekin, unsigned nvalues, double* output_mu )
   {
-    NCP::SansIsotropic pm(sigma,lambda_cutoff);
+    NCP::SansIsotropic pm(I,Q);
     auto rng = NC::defaultRNG();
     for (unsigned i = 0; i < nvalues; ++i)
       output_mu[i] = pm.sampleScatteringEvent(*rng,ekin).mu;

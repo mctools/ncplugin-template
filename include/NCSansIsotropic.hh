@@ -5,6 +5,8 @@
                                           //public API headers, sets up
                                           //namespaces and aliases)
 
+#include "NCLookUpTable.hh"
+
 namespace NCPluginNamespace {
 
   //We implement the actual physics model in this completely custom C++ helper
@@ -31,7 +33,7 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    SansIsotropic( double sigma, double lambda_cutoff );
+    SansIsotropic( const std::vector<double>& x, const std::vector<double>& f );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -43,8 +45,7 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    double m_sigma;
-    double m_cutoffekin;
+    std::unique_ptr<LookUpTable> m_Iq;
   };
 
 }

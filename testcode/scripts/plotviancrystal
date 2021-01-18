@@ -36,10 +36,11 @@ dummyal="""NCMAT v3
   Al   410.4
 """
 
-customsection='@CUSTOM_%s\n  %g %g\n'%( ncplugin.pluginName().upper(),
-                                        newmodel_sigma,
-                                        newmodel_lambda_cutoff )
-print(customsection)
+# customsection='@CUSTOM_%s\n  %g %g\n'%( ncplugin.pluginName().upper(),
+#                                         newmodel_sigma,
+#                                         newmodel_lambda_cutoff )
+customsection='@CUSTOM_%s\n  I 0.1 1 \n Q 0.2 0.2\n'%( ncplugin.pluginName().upper())
+
 NC.registerInMemoryFileData('stdAl.ncmat', dummyal)
 NC.registerInMemoryFileData('customAl.ncmat', dummyal+customsection)
 

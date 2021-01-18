@@ -1,8 +1,8 @@
 #include "NCSansIsotropic.hh"
-
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
+#include <vector>
 
 bool NCP::SansIsotropic::isApplicable( const NC::Info& info )
 {
@@ -30,67 +30,74 @@ NCP::SansIsotropic NCP::SansIsotropic::createFromInfo( const NC::Info& info )
   //    <sigmavalue> <wavelength threshold value>
   //
 
-  //Verify we have exactly one line and two words:
-  if ( data.size() != 1 || data.at(0).size()!=2 )
+  //Verify we have two lines and have identical number of elements
+  if ( data.size() != 2 || data.at(0).size()!=data.at(1).size() )
     NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                    <<" section should be two numbers on a single line");
+                    <<" section should contain two lines that describing an I(Q) (scattering intensity function)");
+
+  if(data.at(0).at(0)!= "I" || data.at(1).at(0)!= "Q")
+    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
+                  <<" the first and second line should be I and Q, respectively.");
 
   //Parse and validate values:
-  double sigma, lambda_cutoff;
-  if ( ! NC::safe_str2dbl( data.at(0).at(0), sigma )
-       || ! NC::safe_str2dbl( data.at(0).at(1), lambda_cutoff )
-       || ! (sigma>0.0) || !(lambda_cutoff>=0.0) )
-    NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                     <<" section (should be two positive floating point values)" );
+  std::vector<double> I, Q;
+  I.reserve(data.at(0).size());
+  Q.reserve(data.at(0).size());
+
+  for(unsigned i=1;i<data.at(0).size();i++)
+  {
+    double temp(0.);
+    if ( !NC::safe_str2dbl( data.at(0).at(i), temp ) )
+      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
+                       <<" section I" );
+    I.push_back(temp);
+
+    if ( !NC::safe_str2dbl( data.at(1).at(i), temp ) )
+      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
+                       <<" section S" );
+    Q.push_back(temp);
+  }
 
   //Parsing done! Create and return our model:
-  return SansIsotropic(sigma,lambda_cutoff);
+  return SansIsotropic(I, Q);
 }
 
-NCP::SansIsotropic::SansIsotropic( double sigma, double lambda_cutoff )
-  : m_sigma(sigma),
-    m_cutoffekin(NC::wl2ekin(lambda_cutoff))
+NCP::SansIsotropic::SansIsotropic( const std::vector<double>& x, const std::vector<double>& f )
+  : m_Iq(std::make_unique<LookUpTable>(x, f))
 {
-  //Important note to developers who are using the infrastructure in the
-  //testcode/ subdirectory: If you change the number or types of the arguments
-  //for the constructor here, you should make sure to perform a corresponding
-  //change in three files in the testcode/ directory: _cbindings.py,
-  //__init__.py, and NCForPython.cc - that way you can still instantiate your
-  //model directly from your python test code).
-
-  nc_assert( m_sigma > 0.0 );
-  nc_assert( m_cutoffekin > 0.0);
+  m_Iq->sanityCheck();
 }
 
 double NCP::SansIsotropic::calcCrossSection( double neutron_ekin ) const
 {
-  if ( neutron_ekin > m_cutoffekin )
-    return m_sigma;
-  return 0.0;
+  //fixme
+  return 10.0+neutron_ekin*0;
 }
 
 NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
 {
   ScatEvent result;
 
-  if ( ! (neutron_ekin > m_cutoffekin) ) {
-    //Special case: We are asked to sample a scattering event for a neutron
-    //energy where we have zero cross section! Although in a real simulation we
-    //would usually not expect this to happen, users with custom code might
-    //still generate such calls. The only consistent thing to do when the cross
-    //section is zero is to not change the neutron state parameters, which means:
-    result.ekin_final = neutron_ekin;
-    result.mu = 1.0;
-    return result;
-  }
+  //fixme
 
-  //Implement our actual model here. Of course it is trivial for the example
-  //model. For a more realistic or complicated model, it might be that
-  //additional helper classes or functions should be created and used, in order
-  //to keep the code here manageable:
-
-  result.ekin_final = neutron_ekin;//Elastic
-  result.mu = randIsotropicScatterMu(&rng);//Isotropic.
+  // if ( ! (neutron_ekin > m_cutoffekin) ) {
+  //   //Special case: We are asked to sample a scattering event for a neutron
+  //   //energy where we have zero cross section! Although in a real simulation we
+  //   //would usually not expect this to happen, users with custom code might
+  //   //still generate such calls. The only consistent thing to do when the cross
+  //   //section is zero is to not change the neutron state parameters, which means:
+  //   result.ekin_final = neutron_ekin;
+  //   result.mu = 1.0;
+  //   return result;
+  // }
+  //
+  // //Implement our actual model here. Of course it is trivial for the example
+  // //model. For a more realistic or complicated model, it might be that
+  // //additional helper classes or functions should be created and used, in order
+  // //to keep the code here manageable:
+  //
+  // result.ekin_final = neutron_ekin;//Elastic
+  // result.mu = randIsotropicScatterMu(&rng);//Isotropic.
 
   return result;
 }
