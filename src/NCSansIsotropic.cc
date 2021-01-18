@@ -35,7 +35,7 @@ NCP::SansIsotropic NCP::SansIsotropic::createFromInfo( const NC::Info& info )
     NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
                     <<" section should contain two lines that describing an I(Q) (scattering intensity function)");
 
-  if(data.at(0).at(0)!= "I" || data.at(1).at(0)!= "Q")
+  if(data.at(0).at(0)!= "Q" || data.at(1).at(0)!= "I")
     NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
                   <<" the first and second line should be I and Q, respectively.");
 
@@ -47,34 +47,34 @@ NCP::SansIsotropic NCP::SansIsotropic::createFromInfo( const NC::Info& info )
   for(unsigned i=1;i<data.at(0).size();i++)
   {
     double temp(0.);
-    if ( !NC::safe_str2dbl( data.at(0).at(i), temp ) )
+    if ( !NC::safe_str2dbl( data.at(1).at(i), temp ) )
       NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
                        <<" section I" );
     I.push_back(temp);
 
-    if ( !NC::safe_str2dbl( data.at(1).at(i), temp ) )
+    if ( !NC::safe_str2dbl( data.at(0).at(i), temp ) )
       NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
                        <<" section S" );
     Q.push_back(temp);
   }
 
   //Parsing done! Create and return our model:
-  return SansIsotropic(I, Q);
+  return SansIsotropic(Q, I);
 }
-
-double NCP::SansIsotropic::ekin2k(double ekin) const
-{
-  return 2.*NC::kPi/NC::ekin2wl(ekin);
-}
-
 
 NCP::SansIsotropic::SansIsotropic( const std::vector<double>& Q, const std::vector<double>& intensity )
-  : m_Iq(std::make_unique<LookUpTable>(Q, intensity, NCP::LookUpTable::Extrapolate::kConst_Zero)),
-   m_xs(std::make_unique<LookUpTable>())
 {
-  m_Iq->sanityCheck();
-  std::vector<double> envec, xsvec;
+  // differential cross section
+  std::vector<double> diffXS;
+  diffXS.reserve(intensity.size());
+  for(unsigned i=0;i<Q.size();i++)
+  {
+    diffXS.push_back(Q[i]*intensity[i]);
+  }
+  m_sansQDist = std::make_unique<NC::PointwiseDist>(Q, diffXS);
 
+  // total xs
+  std::vector<double> envec, xsvec;
   envec.reserve(Q.size());
   xsvec.reserve(Q.size());
 
@@ -90,7 +90,7 @@ NCP::SansIsotropic::SansIsotropic( const std::vector<double>& Q, const std::vect
 
   for(size_t i=1;i<Q.size();i++)
   {
-    double lastK=ekin2k(envec.back());
+    double lastK=2.*NC::kPi/NC::ekin2wl(envec.back()); //ekin to ki
     accumIntegrand = xsvec.back()*lastK*lastK;
     accumIntegrand += NC::kPi*(Q[i]-Q[i-1])*(intensity[i]*Q[i]+intensity[i-1]*Q[i-1]);
     double k = Q[i]*0.5;
@@ -98,18 +98,25 @@ NCP::SansIsotropic::SansIsotropic( const std::vector<double>& Q, const std::vect
     xsvec.push_back(accumIntegrand/(k*k));
   }
 
-  m_xs=std::make_unique<LookUpTable>(envec, xsvec, NCP::LookUpTable::Extrapolate::kZero_Zero);
+  m_xs=std::make_unique<LookUpTable>(envec, xsvec, NCP::LookUpTable::Extrapolate::kConst_OverSqrtX);
 }
 
 double NCP::SansIsotropic::calcCrossSection( double neutron_ekin ) const
 {
-  //fixme
   return m_xs->get(neutron_ekin);
 }
 
 NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
 {
   ScatEvent result;
+  result.ekin_final = neutron_ekin;
+
+  double kappa = 2*NC::kPi/NC::ekin2wl(neutron_ekin);
+  double Q(1e10);
+  while (Q>2*kappa) {
+    Q = m_sansQDist->percentile(rng.generate());
+  }
+  result.mu = 1-Q*Q/(2*kappa*kappa);
 
   //fixme
 

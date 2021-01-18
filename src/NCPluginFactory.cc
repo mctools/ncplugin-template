@@ -83,16 +83,8 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 
 NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
 {
-  //Ok, we are selected as the provider! First create our own scatter model:
-
   auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIsotropic::createFromInfo(*globalCreateInfo(cfg)));
-
-  //Now we just need to combine this with all the other physics
-  //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for
-  //incoherent-elastic physics of course since we are now dealing with that
-  //ourselves:
   auto cfg2 = cfg.clone();
-  cfg2.set_incoh_elas(false);
   auto sc_std = globalCreateScatter(cfg2);
 
   //Combine and return:
