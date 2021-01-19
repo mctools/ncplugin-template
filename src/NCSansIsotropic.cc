@@ -11,7 +11,7 @@ NCP::SansIsotropic::SansIsotropic( const std::vector<double>& Q, const std::vect
 {
   // differential cross section
   std::vector<double> diffXS;
-  diffXS.reserve(intensity.size());
+  diffXS.reserve(Q.size());
   for(unsigned i=0;i<Q.size();i++)
   {
     diffXS.push_back(Q[i]*intensity[i]);

@@ -66,28 +66,20 @@ const char * NCP::PluginFactory::getName() const
 
 int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 {
-  //Must return value >0 if we should do something, and a value higher than
-  //100 means that we take precedence over the standard NCrystal factory:
-  if (!cfg.get_incoh_elas())
-    return 0;//incoherent-elastic disabled, never do anything.
-
-  //Ok, we might be applicable. Load input data and check if is something we
-  //want to handle:
-
   if ( ! SansIQCurve::isApplicable(*globalCreateInfo(cfg)) )
     return 0;
-
-  //Ok, all good. Tell the framework that we want to deal with this, with a
-  //higher priority than the standard factory gives (which is 100):
   return 999;
 }
 
 NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
 {
   auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg)));
-  auto cfg2 = cfg.clone();
-  auto sc_std = globalCreateScatter(cfg2);
-  // Combine and return:
-  return combineScatterObjects( sc_std,
-                                sc_ourmodel.dyncast<const NC::Scatter>() );
+  return sc_ourmodel;
+
+  //fixme: to be enabled again
+  // auto cfg2 = cfg.clone();
+  // auto sc_std = globalCreateScatter(cfg2);
+  // // Combine and return:
+  // return combineScatterObjects( sc_std,
+  //                               sc_ourmodel.dyncast<const NC::Scatter>() );
 }

@@ -6,6 +6,7 @@
                                           //namespaces and aliases)
 
 #include "NCSansIsotropic.hh"
+#include <string>
 
 namespace NCPluginNamespace {
 
@@ -18,15 +19,21 @@ namespace NCPluginNamespace {
     //case of syntax errors in the @CUSTOM_ section data):
 
     static bool isApplicable( const NC::Info& );
-    static SansIsotropic createFromInfo( const NC::Info& );
+    static SansIsotropic createFromInfo( const NC::Info& ); //will raise BadInput in case of syntax errors
 
-    SansIQCurve( const NC::Info& );//will raise BadInput in case of syntax errors
-    const std::vector<double>& getQ(){return m_Q;}
-    const std::vector<double>& getI(){return m_I;}
+  private:
+    SansIQCurve( const NC::Info& );
+    bool calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const;
+    // not have euough info to calculate material coherent scattering length density and number density
+    const std::vector<double>& getQ() const {return m_Q;}
+    const std::vector<double>& getI() const {return m_I;}
+
 
   private:
     //Data members:
+    std::string m_solvantCfg;
     std::vector<double> m_I, m_Q;
+
   };
 }
 #endif

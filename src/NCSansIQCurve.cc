@@ -17,6 +17,38 @@ NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
 }
 
 
+bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const
+{
+  scatLenDensity= 0.;
+  numberDensity =0.;
+  //calculate scattering length density from the dynamic info
+  if(info.hasDynamicInfo()&&info.hasNumberDensity())
+  {
+    numberDensity = info.getNumberDensity();   // in atoms/Aa^3
+    for (auto& dyn : info.getDynamicInfoList())
+    {
+      double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
+      double frac = dyn->fraction();
+      scatLenDensity += scl*frac*numberDensity;
+    }
+  }
+  else if(info.hasStructureInfo()&&info.hasAtomPositions())
+  {
+    auto &strInfo = info.getStructureInfo();
+    double perVolume = 1./strInfo.volume;//Aa^3
+
+    for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
+    {
+      double scl = it->data().coherentScatLen(); //in sqrt(barn)
+      scatLenDensity += scl*perVolume*it->number_per_unit_cell;
+      numberDensity += it->number_per_unit_cell*perVolume;
+    }
+  }
+  else
+    return false;
+  return true;
+}
+
 NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
 {
   //Parse the content of our custom section. In case of syntax errors, we should
@@ -29,6 +61,9 @@ NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
     NCRYSTAL_THROW2(BadInput,"Multiple @CUSTOM_"<<pluginNameUpperCase()<<" sections are not allowed");
   auto data = info.getCustomSection( pluginNameUpperCase() );
 
+  double sdl(0), density(0);
+  calSDL(info, sdl, density);
+  printf("sdl %g, density %g\n",sdl, density);
 
   //Verify we have two lines and have identical number of elements
   if ( data.size() != 2 || data.at(0).size()!=data.at(1).size() )
@@ -41,7 +76,7 @@ NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
 
   //Parse and validate values:
   m_I.reserve(data.at(0).size());
-  m_I.reserve(data.at(0).size());
+  m_Q.reserve(data.at(0).size());
 
   for(unsigned i=1;i<data.at(0).size();i++)
   {
@@ -53,7 +88,7 @@ NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
 
     if ( !NC::safe_str2dbl( data.at(0).at(i), temp ) )
       NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                       <<" section S" );
-    m_I.push_back(temp);
+                       <<" section Q" );
+    m_Q.push_back(temp);
   }
 }
