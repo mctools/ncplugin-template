@@ -52,6 +52,56 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   return true;
 }
 
+NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::CustomSectionData& data) const
+{
+  for(auto line:data)
+  {
+    if(line.at(0)=="DirectLoad")
+      return IqCalType::kDirectLoad;
+  }
+  return IqCalType::kUndefined;
+}
+
+
+void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
+{
+  //Verify we have 3 lines and 2 vectors has identical number of elements
+  // if ( data.size() != 2 || data.at(0).size()!=data.at(1).size() )
+  //   NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
+  //                   <<" section should contain two lines that describing an I(Q) (scattering intensity function)");
+
+  NC::Info::CustomSectionData::const_iterator dataQ(data.end()), dataI(data.end());
+  for(auto line=data.begin();line!=data.end();++line)
+  {
+    if(line->at(0)=="Q")
+      dataQ=line;
+    else if(line->at(0)=="I")
+      dataI=line;
+  }
+
+  if(dataQ==data.end() || dataI==data.end())
+    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" direct load, do not found both I and Q vector");
+
+  //Parse and validate values:
+  m_I.reserve(dataQ->size());
+  m_Q.reserve(dataQ->size());
+
+  for(unsigned i=1;i<dataQ->size();i++)
+  {
+    double temp(0.);
+    if ( !NC::safe_str2dbl( dataI->at(i), temp ) )
+      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
+                       <<" section I" );
+    m_I.push_back(temp);
+
+    if ( !NC::safe_str2dbl( dataQ->at(i), temp ) )
+      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
+                       <<" section Q" );
+    m_Q.push_back(temp);
+  }
+}
+
 NCP::SansIQCurve::SansIQCurve( const NC::Info& info, double packfact )
 :m_densityScale(packfact)
 {
@@ -59,40 +109,24 @@ NCP::SansIQCurve::SansIQCurve( const NC::Info& info, double packfact )
   //raise BadInput exceptions, to make sure users gets understandable error
   //messages. We should try to avoid other types of exceptions.
 
-  //Get the relevant custom section data (and verify that there are not multiple
-  //such sections in the input data):
-  if ( info.countCustomSections( pluginNameUpperCase() ) != 1 )
-    NCRYSTAL_THROW2(BadInput,"Multiple @CUSTOM_"<<pluginNameUpperCase()<<" sections are not allowed");
-  auto data = info.getCustomSection( pluginNameUpperCase() );
 
-  double sdl(0), density(0);
-  calSDL(info, sdl, density);
-  printf("sdl %g, density %g\n",sdl, density);
+  unsigned numSec =  info.countCustomSections( pluginNameUpperCase() );
 
-  //Verify we have two lines and have identical number of elements
-  if ( data.size() != 2 || data.at(0).size()!=data.at(1).size() )
-    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                    <<" section should contain two lines that describing an I(Q) (scattering intensity function)");
-
-  if(data.at(0).at(0)!= "Q" || data.at(1).at(0)!= "I")
-    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                  <<" the first and second line should be I and Q, respectively.");
-
-  //Parse and validate values:
-  m_I.reserve(data.at(0).size());
-  m_Q.reserve(data.at(0).size());
-
-  for(unsigned i=1;i<data.at(0).size();i++)
+  for(unsigned si=0;si<numSec;si++)
   {
-    double temp(0.);
-    if ( !NC::safe_str2dbl( data.at(1).at(i), temp ) )
-      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                       <<" section I" );
-    m_I.push_back(temp);
+    NC::Info::CustomSectionData data = info.getCustomSection( pluginNameUpperCase(), si );
 
-    if ( !NC::safe_str2dbl( data.at(0).at(i), temp ) )
-      NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                       <<" section Q" );
-    m_Q.push_back(temp);
+    switch(getIqCalType(data)) {
+      case kDirectLoad:
+        IqDirectLoad(data);
+        break;
+      default :
+        NCRYSTAL_THROW2(BadInput," @CUSTOM_"<<pluginNameUpperCase()<< " with undefined load method");
+    }
+
+    double sdl(0), density(0);
+    calSDL(info, sdl, density);
+    printf("sdl %g, density %g\n",sdl, density);
   }
+
 }
