@@ -27,7 +27,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   //calculate scattering length density from the dynamic info
   if(info.hasDynamicInfo()&&info.hasNumberDensity())
   {
-    numberDensity = info.getNumberDensity()*m_densityScale;   // in atoms/Aa^3
+    numberDensity = info.getNumberDensity()*m_packfact*m_volfact;   // in atoms/Aa^3
     for (auto& dyn : info.getDynamicInfoList())
     {
       double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
@@ -38,7 +38,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   else if(info.hasStructureInfo()&&info.hasAtomPositions())
   {
     auto &strInfo = info.getStructureInfo();
-    double perVolume = 1./strInfo.volume*m_densityScale;//Aa^3
+    double perVolume = 1./strInfo.volume*m_packfact*m_volfact;//Aa^3
 
     for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
     {
@@ -58,8 +58,91 @@ NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::Custo
   {
     if(line.at(0)=="DirectLoad")
       return IqCalType::kDirectLoad;
+    else if(line.at(0)=="HardSphere")
+      return IqCalType::kHardSphere;
   }
   return IqCalType::kUndefined;
+}
+
+void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, const NC::Info& info)
+{
+  //radius
+  auto it_r=findCustomLineIter(data, "radius");
+  if(it_r->size()!=2)
+    NCRYSTAL_THROW2( BadInput,"radius in the @CUSTOM_"<<pluginNameUpperCase()
+                   <<" radius field should prove one parameter" );
+  double radius(0.);
+  if ( !NC::safe_str2dbl( it_r->at(1), radius ) )
+    NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" section radius" );
+
+  //solvent
+  NC::Info::CustomSectionData::const_iterator it_solvent=data.end();
+
+  try {
+    it_solvent=findCustomLineIter(data, "solvent");  //m_volfact
+  } catch (NC::Error::BadInput&e) {
+    //I don't prevent no solvent
+  }
+
+  if(it_solvent!=data.end())
+  {
+    if(it_solvent->size()!=3)
+      NCRYSTAL_THROW2( BadInput,"radius in the @CUSTOM_"<<pluginNameUpperCase()
+                     <<" solvent field should prove two parameters" );
+    m_solvantCfg = it_solvent->at(1);
+
+    double solventfac (0.);
+    if ( !NC::safe_str2dbl( it_solvent->at(2), solventfac ) )
+      NCRYSTAL_THROW2( BadInput,"Invalid volume fraction specified in the @CUSTOM_"<<pluginNameUpperCase()
+                       <<" solvent " );
+    m_solvantCfg += ";packfact="+std::to_string(m_packfact*solventfac);
+    m_volfact = 1-solventfac;
+    printf("m_solvantCfg %s\n", m_solvantCfg.c_str());
+  }
+
+  double sld(0), numden(0);
+  calSDL(info, sld, numden);
+  printf("sdl %g, number density %g\n",sld, numden);
+
+  double R=radius;
+  double R3=R*R*R;
+  double V = 4./3.*NC::kPi*R3;
+  double atomNumInSphere = V*numden;
+
+
+  m_Q=NC::logspace(-6,10,1000);
+  m_I.reserve(m_Q.size());
+
+  for(double q:m_Q)
+  {
+    if(q<1e-5) // approximate by the limit at zero, fixme: this should be found automatically
+      m_I.push_back(1.77777777777777777777777778*NC::kPi*NC::kPi*pow(radius,6)*sld*sld*1e8/atomNumInSphere);
+    else
+    {
+      double P = 3* (sin(q*R) - q*R*cos(q*R))/(R3* q*q*q);
+      m_I.push_back( V*V* sld* sld* P*P *1e8/atomNumInSphere);
+    }
+  }
+
+}
+
+NC::Info::CustomSectionData::const_iterator
+  NCP::SansIQCurve::findCustomLineIter(const NC::Info::CustomSectionData& data, const std::string& keyword, bool check) const
+{
+  NC::Info::CustomSectionData::const_iterator it(data.end());
+  for(auto line=data.begin();line!=data.end();++line)
+  {
+    if(line->at(0)==keyword)
+    {
+      it=line;
+      break;
+    }
+  }
+  if(check && it==data.end())
+    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" can not find parameter " << keyword);
+  return it;
 }
 
 
@@ -70,18 +153,8 @@ void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
   //   NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
   //                   <<" section should contain two lines that describing an I(Q) (scattering intensity function)");
 
-  NC::Info::CustomSectionData::const_iterator dataQ(data.end()), dataI(data.end());
-  for(auto line=data.begin();line!=data.end();++line)
-  {
-    if(line->at(0)=="Q")
-      dataQ=line;
-    else if(line->at(0)=="I")
-      dataI=line;
-  }
-
-  if(dataQ==data.end() || dataI==data.end())
-    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                    <<" direct load, do not found both I and Q vector");
+  auto dataQ=findCustomLineIter(data, "Q");
+  auto dataI=findCustomLineIter(data, "I");
 
   //Parse and validate values:
   m_I.reserve(dataQ->size());
@@ -103,30 +176,26 @@ void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
 }
 
 NCP::SansIQCurve::SansIQCurve( const NC::Info& info, double packfact )
-:m_densityScale(packfact)
+:m_packfact(packfact), m_volfact(1.)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error
   //messages. We should try to avoid other types of exceptions.
 
 
-  unsigned numSec =  info.countCustomSections( pluginNameUpperCase() );
+  // unsigned numSec =  info.countCustomSections( pluginNameUpperCase() ); fixme
 
-  for(unsigned si=0;si<numSec;si++)
-  {
-    NC::Info::CustomSectionData data = info.getCustomSection( pluginNameUpperCase(), si );
+    NC::Info::CustomSectionData data = info.getCustomSection( pluginNameUpperCase(), 0 );
 
     switch(getIqCalType(data)) {
       case kDirectLoad:
         IqDirectLoad(data);
         break;
+      case kHardSphere:
+        IqHardSphere(data,info);
+        break;
       default :
         NCRYSTAL_THROW2(BadInput," @CUSTOM_"<<pluginNameUpperCase()<< " with undefined load method");
-    }
-
-    double sdl(0), density(0);
-    calSDL(info, sdl, density);
-    printf("sdl %g, density %g\n",sdl, density);
   }
 
 }

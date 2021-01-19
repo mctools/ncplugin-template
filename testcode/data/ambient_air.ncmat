@@ -1,0 +1,11 @@
+NCMAT v2
+@DYNINFO
+  element  N
+  fraction 0.78
+  type     freegas
+@DYNINFO
+  element  O
+  fraction 0.22
+  type     freegas
+@DENSITY
+  1.225 kg_per_m3

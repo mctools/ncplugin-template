@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 ncplugin.registerPlugin()#<---register our plugin with NCrystal
 
 
-sc_plugin = NC.createScatter("testcode/data/custom.ncmat;packfact=1")
+# sc_plugin = NC.createScatter("testcode/data/custom.ncmat;packfact=1")
+sc_plugin = NC.createScatter("testcode/data/C_sg227_Diamond_hs.ncmat")
 wls = np.linspace(0.01,10.0,1000)
 plt.plot( wls, sc_plugin.xsect(wl=wls), label='With new plugin' )
 
