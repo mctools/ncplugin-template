@@ -2,6 +2,7 @@
 #include "NCPluginFactory.hh"
 #include "NCSansIsotropic.hh"
 #include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
+#include "NCSansIQCurve.hh"
 
 namespace NCPluginNamespace {
 
@@ -73,7 +74,7 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
 
-  if ( ! SansIsotropic::isApplicable(*globalCreateInfo(cfg)) )
+  if ( ! SansIQCurve::isApplicable(*globalCreateInfo(cfg)) )
     return 0;
 
   //Ok, all good. Tell the framework that we want to deal with this, with a
@@ -83,11 +84,10 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 
 NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
 {
-  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIsotropic::createFromInfo(*globalCreateInfo(cfg)));
+  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg)));
   auto cfg2 = cfg.clone();
   auto sc_std = globalCreateScatter(cfg2);
-
-  //Combine and return:
+  // Combine and return:
   return combineScatterObjects( sc_std,
                                 sc_ourmodel.dyncast<const NC::Scatter>() );
 }
