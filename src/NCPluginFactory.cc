@@ -54,16 +54,6 @@ const char * NCP::PluginFactory::getName() const
   return NCPLUGIN_NAME_CSTR "Factory";
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//                                                                              //
-// Here follows the factory logic, for how the physics model provided by the    //
-// plugin should be combined with existing models in NCrystal.                  //
-//                                                                              //
-// In the silly example here, we want our custom physics model to replace the   //
-// existing incoherent-elastic model of NCrystal with our own model.            //
-//                                                                              //
-//////////////////////////////////////////////////////////////////////////////////
-
 int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 {
   if ( ! SansIQCurve::isApplicable(*globalCreateInfo(cfg)) )
@@ -73,7 +63,7 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 
 NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
 {
-  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg)));
+  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg), cfg.get_packfact() ));
   return sc_ourmodel;
 
   //fixme: to be enabled again

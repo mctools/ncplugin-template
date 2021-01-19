@@ -10,9 +10,12 @@ bool NCP::SansIQCurve::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
+NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info, double packfact)
 {
-  auto iq = SansIQCurve(info);
+  if(packfact<0. || packfact>1.)
+    NCRYSTAL_THROW2(BadInput, "Packing factor in @CUSTOM_"<<pluginNameUpperCase()
+                    <<" should be in the range between (0,1], but " << packfact <<" is given.");
+  auto iq = SansIQCurve(info, packfact);
   return SansIsotropic(iq.getQ(), iq.getI());
 }
 
@@ -24,7 +27,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   //calculate scattering length density from the dynamic info
   if(info.hasDynamicInfo()&&info.hasNumberDensity())
   {
-    numberDensity = info.getNumberDensity();   // in atoms/Aa^3
+    numberDensity = info.getNumberDensity()*m_densityScale;   // in atoms/Aa^3
     for (auto& dyn : info.getDynamicInfoList())
     {
       double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
@@ -35,7 +38,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   else if(info.hasStructureInfo()&&info.hasAtomPositions())
   {
     auto &strInfo = info.getStructureInfo();
-    double perVolume = 1./strInfo.volume;//Aa^3
+    double perVolume = 1./strInfo.volume*m_densityScale;//Aa^3
 
     for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
     {
@@ -49,7 +52,8 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   return true;
 }
 
-NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
+NCP::SansIQCurve::SansIQCurve( const NC::Info& info, double packfact )
+:m_densityScale(packfact)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error

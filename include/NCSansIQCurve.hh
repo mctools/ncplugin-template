@@ -17,12 +17,11 @@ namespace NCPluginNamespace {
     //A few static helper functions which can extract relevant data from NCInfo
     //objects (the createFromInfo function will raise BadInput exceptions in
     //case of syntax errors in the @CUSTOM_ section data):
-
     static bool isApplicable( const NC::Info& );
-    static SansIsotropic createFromInfo( const NC::Info& ); //will raise BadInput in case of syntax errors
+    static SansIsotropic createFromInfo( const NC::Info&, double packfact=1.); //will raise BadInput in case of syntax errors
 
   private:
-    SansIQCurve( const NC::Info& );
+    SansIQCurve(const NC::Info& info, double packfact=1.);
     bool calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const;
     // not have euough info to calculate material coherent scattering length density and number density
     const std::vector<double>& getQ() const {return m_Q;}
@@ -31,9 +30,9 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
+    double m_densityScale;
     std::string m_solvantCfg;
     std::vector<double> m_I, m_Q;
-
   };
 }
 #endif
