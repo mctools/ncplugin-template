@@ -27,18 +27,11 @@ namespace NCPluginNamespace {
 
   private:
     SansIQCurve(const NC::Info& info);
-    bool calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const;
-
     IqCalType getIqCalType(const NC::Info::CustomSectionData& data) const;
     void IqDirectLoad(const NC::Info::CustomSectionData& data);
     void IqHardSphere(const NC::Info::CustomSectionData& data, const NC::Info& info);
-    //could stand alone
-    NC::Info::CustomSectionData::const_iterator findCustomLineIter(const NC::Info::CustomSectionData& data, const std::string& keyword, bool check=true) const;
-
-
     const std::vector<double>& getQ() const {return m_Q;}
     const std::vector<double>& getI() const {return m_I;}
-
 
   private:
     //Data members:

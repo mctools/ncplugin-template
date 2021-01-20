@@ -1,4 +1,5 @@
 #include "NCSansIQCurve.hh"
+#include  "NCSansHelper.hh"
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
@@ -14,39 +15,6 @@ NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
 {
   auto iq = SansIQCurve(info);
   return SansIsotropic(iq.getQ(), iq.getI());
-}
-
-
-bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const
-{
-  scatLenDensity= 0.;
-  numberDensity =0.;
-  //calculate scattering length density from the dynamic info
-  if(info.hasDynamicInfo()&&info.hasNumberDensity())
-  {
-    numberDensity = info.getNumberDensity();   // in atoms/Aa^3
-    for (auto& dyn : info.getDynamicInfoList())
-    {
-      double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
-      double frac = dyn->fraction();
-      scatLenDensity += scl*frac*numberDensity;
-    }
-  }
-  else if(info.hasStructureInfo()&&info.hasAtomPositions())
-  {
-    auto &strInfo = info.getStructureInfo();
-    double perVolume = 1./strInfo.volume;//Aa^3
-
-    for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
-    {
-      double scl = it->data().coherentScatLen(); //in sqrt(barn)
-      scatLenDensity += scl*perVolume*it->number_per_unit_cell;
-      numberDensity += it->number_per_unit_cell*perVolume;
-    }
-  }
-  else
-    return false;
-  return true;
 }
 
 NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::CustomSectionData& data) const
@@ -122,25 +90,6 @@ void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, con
   }
 
 }
-
-NC::Info::CustomSectionData::const_iterator
-  NCP::SansIQCurve::findCustomLineIter(const NC::Info::CustomSectionData& data, const std::string& keyword, bool check) const
-{
-  NC::Info::CustomSectionData::const_iterator it(data.end());
-  for(auto line=data.begin();line!=data.end();++line)
-  {
-    if(line->at(0)==keyword)
-    {
-      it=line;
-      break;
-    }
-  }
-  if(check && it==data.end())
-    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                    <<" can not find parameter " << keyword);
-  return it;
-}
-
 
 void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
 {
