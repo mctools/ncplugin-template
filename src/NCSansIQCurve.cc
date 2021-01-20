@@ -10,12 +10,9 @@ bool NCP::SansIQCurve::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info, double packfact)
+NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
 {
-  if(packfact<0. || packfact>1.)
-    NCRYSTAL_THROW2(BadInput, "Packing factor in @CUSTOM_"<<pluginNameUpperCase()
-                    <<" should be in the range between (0,1], but " << packfact <<" is given.");
-  auto iq = SansIQCurve(info, packfact);
+  auto iq = SansIQCurve(info);
   return SansIsotropic(iq.getQ(), iq.getI());
 }
 
@@ -27,7 +24,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   //calculate scattering length density from the dynamic info
   if(info.hasDynamicInfo()&&info.hasNumberDensity())
   {
-    numberDensity = info.getNumberDensity()*m_packfact*m_volfact;   // in atoms/Aa^3
+    numberDensity = info.getNumberDensity();   // in atoms/Aa^3
     for (auto& dyn : info.getDynamicInfoList())
     {
       double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
@@ -38,7 +35,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   else if(info.hasStructureInfo()&&info.hasAtomPositions())
   {
     auto &strInfo = info.getStructureInfo();
-    double perVolume = 1./strInfo.volume*m_packfact*m_volfact;//Aa^3
+    double perVolume = 1./strInfo.volume;//Aa^3
 
     for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
     {
@@ -80,7 +77,7 @@ void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, con
   NC::Info::CustomSectionData::const_iterator it_solvent=data.end();
 
   try {
-    it_solvent=findCustomLineIter(data, "solvent");  //m_volfact
+    it_solvent=findCustomLineIter(data, "solvent");
   } catch (NC::Error::BadInput&e) {
     //I don't prevent no solvent
   }
@@ -96,8 +93,7 @@ void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, con
     if ( !NC::safe_str2dbl( it_solvent->at(2), solventfac ) )
       NCRYSTAL_THROW2( BadInput,"Invalid volume fraction specified in the @CUSTOM_"<<pluginNameUpperCase()
                        <<" solvent " );
-    m_solvantCfg += ";packfact="+std::to_string(m_packfact*solventfac);
-    m_volfact = 1-solventfac;
+    m_solvantCfg += ";packfact="+std::to_string(solventfac);
     printf("m_solvantCfg %s\n", m_solvantCfg.c_str());
   }
 
@@ -117,11 +113,11 @@ void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, con
   for(double q:m_Q)
   {
     if(q<1e-5) // approximate by the limit at zero, fixme: this should be found automatically
-      m_I.push_back(1.77777777777777777777777778*NC::kPi*NC::kPi*pow(radius,6)*sld*sld*1e8/atomNumInSphere);
+      m_I.push_back(1.77777777777777777777777778*NC::kPi*NC::kPi*pow(radius,6)*sld*sld/atomNumInSphere);
     else
     {
       double P = 3* (sin(q*R) - q*R*cos(q*R))/(R3* q*q*q);
-      m_I.push_back( V*V* sld* sld* P*P *1e8/atomNumInSphere);
+      m_I.push_back( V*V* sld* sld* P*P/atomNumInSphere);
     }
   }
 
@@ -175,8 +171,7 @@ void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
   }
 }
 
-NCP::SansIQCurve::SansIQCurve( const NC::Info& info, double packfact )
-:m_packfact(packfact), m_volfact(1.)
+NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error

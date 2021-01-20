@@ -63,13 +63,16 @@ int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
 
 NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
 {
-  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg), cfg.get_packfact() ));
-  return sc_ourmodel;
+  if(cfg.get_packfact()!=1.0)
+  NCRYSTAL_THROW2(BadInput,"@CUSTOM_"<<pluginNameUpperCase()
+                  <<" plugin only supports material with unity packing factor");
+  auto sc_ourmodel = NC::makeRC<PluginScatter>(SansIQCurve::createFromInfo(*globalCreateInfo(cfg) ));
+  // return sc_ourmodel;
 
-  //fixme: to be enabled again
-  // auto cfg2 = cfg.clone();
-  // auto sc_std = globalCreateScatter(cfg2);
-  // // Combine and return:
-  // return combineScatterObjects( sc_std,
-  //                               sc_ourmodel.dyncast<const NC::Scatter>() );
+  // fixme: to be enabled again
+  auto cfg2 = cfg.clone();
+  auto sc_std = globalCreateScatter(cfg2);
+  // Combine and return:
+  return combineScatterObjects( sc_std,
+                                sc_ourmodel.dyncast<const NC::Scatter>() );
 }
