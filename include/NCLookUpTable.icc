@@ -15,20 +15,28 @@ inline double NCPluginNamespace::LookUpTable::extrapConstLower(double)
 
 inline double NCPluginNamespace::LookUpTable::extrapOverSqrtXLower(double x)
 {
+  if(x<=0. || m_x.front()<0. )
+    NCRYSTAL_THROW(CalcError, "LookUpTable::extrapOverSqrtXLower parameter error ");
   return m_f.front()*sqrt(m_x.front()/x);
 }
 
 inline double NCPluginNamespace::LookUpTable::extrapOverSqrtXUpper(double x)
 {
+  if(x<=0. || m_x.back()<0. )
+    NCRYSTAL_THROW(CalcError, "LookUpTable::extrapOverSqrtXUpper parameter error ");
   return m_f.back()*sqrt(m_x.back()/x);
 }
 
 inline double NCPluginNamespace::LookUpTable::extrapOverXLower(double x)
 {
+  if(x==0.)
+    NCRYSTAL_THROW(CalcError, "LookUpTable::extrapOverXLower x should be non-zero ");
   return m_f.front()*(m_x.front()/x);
 }
 
 inline double NCPluginNamespace::LookUpTable::extrapOverXUpper(double x)
 {
+  if(x==0.)
+    NCRYSTAL_THROW(CalcError, "LookUpTable::extrapOverXUpper x should be non-zero ");
   return m_f.back()*(m_x.back()/x);
 }
