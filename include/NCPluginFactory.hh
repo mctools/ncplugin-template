@@ -10,11 +10,11 @@ namespace NCPluginNamespace {
   //Factory which implements logic of how the physics model provided by the
   //plugin should be combined with existing models in NCrystal:
 
-  class PluginFactory final : public NC::FactoryBase {
+  class PluginFactory final : public NC::FactImpl::ScatterFactory {
   public:
-    const char * getName() const final;
-    int canCreateScatter( const NC::MatCfg& ) const final;
-    NC::RCHolder<const NC::Scatter> createScatter( const NC::MatCfg& ) const final;
+    const char * name() const noexcept override;
+    NC::Priority query( const NC::MatCfg& ) const override;
+    NC::ProcImpl::ProcPtr produce( const NC::MatCfg& ) const override;
   };
 }
 

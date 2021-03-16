@@ -85,7 +85,7 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
   return total_sigma;
 }
 
-double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double neutron_ekin ) const 
+double NCP::PhysicsModel::sampleScatteringVector( NC::RNG& rng, double neutron_ekin ) const 
 {
   double rand = rng.generate();
   double Q;
@@ -99,13 +99,12 @@ double NCP::PhysicsModel::sampleScatteringVector( NC::RandomBase& rng, double ne
     Q = std::pow((rand/ratio_sigma - (m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/(m_b2+2));
   }
 
-  
   return Q;
 }
-NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
+NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
   ScatEvent result;
-  
+
   //section for energy limits
   /*if ( ! (neutron_ekin > 1) ) {
     result.ekin_final = neutron_ekin;
