@@ -69,7 +69,7 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
   return 0.0;
 }
 
-NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
+NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
   ScatEvent result;
 
@@ -90,7 +90,7 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::Rando
   //to keep the code here manageable:
 
   result.ekin_final = neutron_ekin;//Elastic
-  result.mu = randIsotropicScatterMu(&rng);//Isotropic.
+  result.mu = randIsotropicScatterMu(rng).dbl();
 
   return result;
 }
