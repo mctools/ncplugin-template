@@ -17,9 +17,9 @@ extern "C" {
   void nctest_samplemanyscatmu( const std::vector<double>& I, const std::vector<double>& Q, double ekin, unsigned nvalues, double* output_mu )
   {
     NCP::SansIsotropic pm(I,Q);
-    auto rng = NC::defaultRNG();
+    auto rng = NC::getRNG();
     for (unsigned i = 0; i < nvalues; ++i)
-      output_mu[i] = pm.sampleScatteringEvent(*rng,ekin).mu;
+      output_mu[i] = pm.sampleScatteringEvent(rng,ekin).mu;
   }
 
 }

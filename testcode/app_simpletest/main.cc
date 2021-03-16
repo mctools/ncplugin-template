@@ -18,7 +18,7 @@ int main()
               << pm.calcCrossSection(ekin)  <<" barn" << std::endl;
   }
 
-  // auto rng = NC::defaultRNG();
+  // auto rng = NC::getRNG();
   //
   // for ( auto wl : NC::linspace(1.0, 8.0, 3) ) {
   //   for (unsigned i = 0; i < 10; ++i) {
