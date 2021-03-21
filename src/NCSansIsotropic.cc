@@ -53,7 +53,7 @@ double NCP::SansIsotropic::calcCrossSection( double neutron_ekin ) const
     return 0.;
 }
 
-NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const
+NCP::SansIsotropic::ScatEvent NCP::SansIsotropic::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
   ScatEvent result;
   result.ekin_final = neutron_ekin;

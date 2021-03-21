@@ -27,7 +27,7 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
   //calculate scattering length density from the dynamic info
   if(info.hasDynamicInfo()&&info.hasNumberDensity())
   {
-    numberDensity = info.getNumberDensity()*m_packfact*m_volfact;   // in atoms/Aa^3
+    numberDensity = info.getNumberDensity().dbl()*m_packfact*m_volfact;   // in atoms/Aa^3
     for (auto& dyn : info.getDynamicInfoList())
     {
       double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
@@ -42,9 +42,9 @@ bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, doub
 
     for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
     {
-      double scl = it->data().coherentScatLen(); //in sqrt(barn)
-      scatLenDensity += scl*perVolume*it->number_per_unit_cell;
-      numberDensity += it->number_per_unit_cell*perVolume;
+      double scl = it->atomData().coherentScatLen(); //in sqrt(barn)
+      scatLenDensity += scl*perVolume*it->numberPerUnitCell();
+      numberDensity += it->numberPerUnitCell()*perVolume;
     }
   }
   else
