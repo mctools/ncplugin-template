@@ -5,49 +5,33 @@
 
 namespace NCPluginNamespace {
 
-  class PluginScatter final : public NC::ScatterIsotropic {
+  class PluginScatter final : public NC::ProcImpl::ScatterIsotropicMat {
   public:
 
     //The factory wraps our custom PhysicsModel helper class in an NCrystal API
     //Scatter class.
 
-    PluginScatter( PhysicsModel && pm )
-      : ScatterIsotropic(NCPLUGIN_NAME_CSTR "Model"),
-        m_pm(std::move(pm))
+    const char * name() const noexcept override { return NCPLUGIN_NAME_CSTR "Model"; }
+    PluginScatter( PhysicsModel && pm ) : m_pm(std::move(pm)) {}
+
+    NC::CrossSect crossSectionIsotropic(NC::CachePtr&, NC::NeutronEnergy ekin) const override
     {
+      return NC::CrossSect{ m_pm.calcCrossSection(ekin.dbl()) };
     }
 
-    double crossSectionNonOriented( double ekin ) const final
+    NC::ScatterOutcomeIsotropic sampleScatterIsotropic(NC::CachePtr&, NC::RNG& rng, NC::NeutronEnergy ekin ) const override
     {
-      //Trivial.
-      return m_pm.calcCrossSection(ekin);
+      auto outcome = m_pm.sampleScatteringEvent( rng, ekin.dbl() );
+      return { NC::NeutronEnergy{outcome.ekin_final}, NC::CosineScatAngle{outcome.mu} };
     }
 
-    void generateScatteringNonOriented( double ekin, double& angle, double& delta_ekin ) const final
-    {
-      //Specialised interface, providing delta-E and angle.
-      auto outcome = m_pm.sampleScatteringEvent( *getRNG(), ekin );
-      delta_ekin = outcome.ekin_final - ekin;
-      angle = std::acos(outcome.mu);
-    }
-
-    void generateScattering( double ekin, const double (&indir)[3],
-                             double (&outdir)[3], double& delta_ekin ) const final
-    {
-      //Generic interface called by most MC simulation codes.
-      auto outcome = m_pm.sampleScatteringEvent( *getRNG(), ekin );
-      delta_ekin = outcome.ekin_final - ekin;
-      randDirectionGivenScatterMu( getRNG(), outcome.mu, indir, outdir );
-    }
-  protected:
-    virtual ~PluginScatter() = default;
   private:
     PhysicsModel m_pm;
   };
 
 }
 
-const char * NCP::PluginFactory::getName() const
+const char * NCP::PluginFactory::name() const noexcept
 {
   //Factory name. Keep this standardised form please:
   return NCPLUGIN_NAME_CSTR "Factory";
@@ -63,33 +47,32 @@ const char * NCP::PluginFactory::getName() const
 //                                                                              //
 //////////////////////////////////////////////////////////////////////////////////
 
-int NCP::PluginFactory::canCreateScatter( const NC::MatCfg& cfg ) const
+NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 {
   //Must return value >0 if we should do something, and a value higher than
   //100 means that we take precedence over the standard NCrystal factory:
   //if (!cfg.get_incoh_elas())
-  //  return 0;//incoherent-elastic disabled, never do anything.
+  //  return NC::Priority::Unable;//incoherent-elastic disabled, never do anything.
 
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
 
-  if ( ! PhysicsModel::isApplicable(*globalCreateInfo(cfg)) )
-    return 0;
+  if ( ! PhysicsModel::isApplicable( globalCreateInfo(cfg)) )
+    return NC::Priority::Unable;
 
   //Ok, all good. Tell the framework that we want to deal with this, with a
   //higher priority than the standard factory gives (which is 100):
-  return 999;
+  return NC::Priority{999};
 }
 
-NC::RCHolder<const NC::Scatter> NCP::PluginFactory::createScatter( const NC::MatCfg& cfg ) const
+NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::MatCfg& cfg ) const
 {
   //Ok, we are selected as the provider! First create our own scatter model:
 
-  auto sc_ourmodel = NC::makeRC<PluginScatter>(PhysicsModel::createFromInfo(*globalCreateInfo(cfg)));
+  auto sc_ourmodel = NC::makeSO<PluginScatter>(PhysicsModel::createFromInfo(globalCreateInfo(cfg)));
 
   auto sc_std = globalCreateScatter(cfg);
 
   //Combine and return:
-  return combineScatterObjects( sc_std,
-                                sc_ourmodel.dyncast<const NC::Scatter>() );
+  return combineProcs( sc_std, sc_ourmodel );
 }

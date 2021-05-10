@@ -17,9 +17,9 @@ extern "C" {
   void nctest_samplemanyscatmu( double A1, double b1, double A2, double b2, double Q0, double sigma0, double ekin, unsigned nvalues, double* output_mu )
   {
     NCP::PhysicsModel pm(A1,  b1,  A2,  b2,  Q0,  sigma0);
-    auto rng = NC::defaultRNG();
+    auto rng = NC::getRNG();
     for (unsigned i = 0; i < nvalues; ++i)
-      output_mu[i] = pm.sampleScatteringEvent(*rng,ekin).mu;
+      output_mu[i] = pm.sampleScatteringEvent(rng,ekin).mu;
   }
 
 }
