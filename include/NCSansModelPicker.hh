@@ -1,5 +1,5 @@
-#ifndef NCPlugin_SansIQCurve_hh
-#define NCPlugin_SansIQCurve_hh
+#ifndef NCPlugin_SansModelPicker_hh
+#define NCPlugin_SansModelPicker_hh
 
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
@@ -11,7 +11,7 @@ namespace NCPluginNamespace {
 
   //This class helps to create an I(Q) curve from info object for the Isotropic sans model
 
-  class SansIQCurve final : public NC::MoveOnly {
+  class SansModelPicker final : public NC::MoveOnly {
   public:
     enum IqCalType {
       kDirectLoad,
@@ -24,10 +24,9 @@ namespace NCPluginNamespace {
     //case of syntax errors in the @CUSTOM_ section data):
     static bool isApplicable( const NC::Info& );
     static SansIsotropic createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info ); //will raise BadInput in case of syntax errors
-    bool calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const;
 
   private:
-    SansIQCurve(const NC::Info& info);
+    SansModelPicker(const NC::Info& info);
     IqCalType getIqCalType(const NC::Info::CustomSectionData& data) const;
     void IqDirectLoad(const NC::Info::CustomSectionData& data);
     void IqHardSphere(const NC::Info::CustomSectionData& data, const NC::Info& info);

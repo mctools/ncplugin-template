@@ -2,7 +2,7 @@
 #include "NCPluginFactory.hh"
 #include "NCSansIsotropic.hh"
 #include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
-#include "NCSansIQCurve.hh"
+#include "NCSansModelPicker.hh"
 
 namespace NCPluginNamespace {
 
@@ -40,7 +40,7 @@ const char * NCP::PluginFactory::name() const noexcept
 
 NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 {
-  if ( ! SansIQCurve::isApplicable(*globalCreateInfo(cfg)) )
+  if ( ! SansModelPicker::isApplicable(*globalCreateInfo(cfg)) )
     return NC::Priority::Unable;
   return NC::Priority{999};
 }
@@ -48,7 +48,7 @@ NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::MatCfg& cfg ) const
 {
   // cfg.get_packfact()
-  auto sc_ourmodel = NC::makeSO<PluginScatter>(SansIQCurve::createFromInfo(globalCreateInfo(cfg) ));
+  auto sc_ourmodel = NC::makeSO<PluginScatter>(SansModelPicker::createFromInfo(globalCreateInfo(cfg) ));
   return sc_ourmodel;
 
   //fixme: to be enabled again

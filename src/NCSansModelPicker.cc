@@ -1,56 +1,23 @@
-#include "NCSansIQCurve.hh"
+#include "NCSansModelPicker.hh"
 #include  "NCSansHelper.hh"
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
 #include <vector>
 
-bool NCP::SansIQCurve::isApplicable( const NC::Info& info )
+bool NCP::SansModelPicker::isApplicable( const NC::Info& info )
 {
   //Accept if input is NCMAT data with @CUSTOM_<pluginname> section:
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info)
+NCP::SansIsotropic NCP::SansModelPicker::createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info)
 {
-  auto iq = SansIQCurve(info);
+  auto iq = SansModelPicker(info);
   return SansIsotropic(iq.getQ(), iq.getI());
 }
 
-
-bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const
-{
-  scatLenDensity= 0.;
-  numberDensity =0.;
-  //calculate scattering length density from the dynamic info
-  if(info.hasDynamicInfo()&&info.hasNumberDensity())
-  {
-    numberDensity = info.getNumberDensity().dbl()*m_packfact*m_volfact;   // in atoms/Aa^3
-    for (auto& dyn : info.getDynamicInfoList())
-    {
-      double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
-      double frac = dyn->fraction();
-      scatLenDensity += scl*frac*numberDensity;
-    }
-  }
-  else if(info.hasStructureInfo()&&info.hasAtomPositions())
-  {
-    auto &strInfo = info.getStructureInfo();
-    double perVolume = 1./strInfo.volume*m_packfact*m_volfact;//Aa^3
-
-    for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
-    {
-      double scl = it->atomData().coherentScatLen(); //in sqrt(barn)
-      scatLenDensity += scl*perVolume*it->numberPerUnitCell();
-      numberDensity += it->numberPerUnitCell()*perVolume;
-    }
-  }
-  else
-    return false;
-  return true;
-}
-
-NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::CustomSectionData& data) const
+NCP::SansModelPicker::IqCalType NCP::SansModelPicker::getIqCalType(const NC::Info::CustomSectionData& data) const
 {
   for(auto line:data)
   {
@@ -62,7 +29,7 @@ NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::Custo
   return IqCalType::kUndefined;
 }
 
-void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, const NC::Info& info)
+void NCP::SansModelPicker::IqHardSphere(const NC::Info::CustomSectionData& data, const NC::Info& info)
 {
   //radius
   auto it_r=findCustomLineIter(data, "radius");
@@ -124,7 +91,7 @@ void NCP::SansIQCurve::IqHardSphere(const NC::Info::CustomSectionData& data, con
 
 }
 
-void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
+void NCP::SansModelPicker::IqDirectLoad(const NC::Info::CustomSectionData& data)
 {
   //Verify we have 3 lines and 2 vectors has identical number of elements
   // if ( data.size() != 2 || data.at(0).size()!=data.at(1).size() )
@@ -153,7 +120,7 @@ void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
   }
 }
 
-NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
+NCP::SansModelPicker::SansModelPicker( const NC::Info& info )
 :m_packfact(1.), m_volfact(1.)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
