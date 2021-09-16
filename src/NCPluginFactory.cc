@@ -47,7 +47,8 @@ NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 
 NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::MatCfg& cfg ) const
 {
-  auto sc_ourmodel = NC::makeSO<PluginScatter>(SansIQCurve::createFromInfo(globalCreateInfo(cfg), cfg.get_packfact() ));
+  // cfg.get_packfact()
+  auto sc_ourmodel = NC::makeSO<PluginScatter>(SansIQCurve::createFromInfo(globalCreateInfo(cfg) ));
   return sc_ourmodel;
 
   //fixme: to be enabled again

@@ -11,7 +11,7 @@ bool NCP::SansIQCurve::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
+NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info)
 {
   auto iq = SansIQCurve(info);
   return SansIsotropic(iq.getQ(), iq.getI());
@@ -154,6 +154,7 @@ void NCP::SansIQCurve::IqDirectLoad(const NC::Info::CustomSectionData& data)
 }
 
 NCP::SansIQCurve::SansIQCurve( const NC::Info& info )
+:m_packfact(1.), m_volfact(1.)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error

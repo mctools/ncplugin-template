@@ -23,7 +23,8 @@ namespace NCPluginNamespace {
     //objects (the createFromInfo function will raise BadInput exceptions in
     //case of syntax errors in the @CUSTOM_ section data):
     static bool isApplicable( const NC::Info& );
-    static SansIsotropic createFromInfo( const NC::Info&); //will raise BadInput in case of syntax errors
+    static SansIsotropic createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info ); //will raise BadInput in case of syntax errors
+    bool calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const;
 
   private:
     SansIQCurve(const NC::Info& info);
@@ -35,6 +36,7 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
+    double m_packfact, m_volfact; //fixme: this two parameters are set to unity for the time being
     std::string m_solvantCfg;
     std::vector<double> m_I, m_Q;
   };
