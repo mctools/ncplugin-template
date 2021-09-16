@@ -23,7 +23,7 @@ namespace NCPluginNamespace {
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
     struct ScatEvent { double ekin_final, mu; };
-    ScatEvent sampleScatteringEvent( NC::RandomBase& rng, double neutron_ekin ) const;
+    ScatEvent sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const;
 
   private:
     //Data members:

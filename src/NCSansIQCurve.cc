@@ -17,6 +17,39 @@ NCP::SansIsotropic NCP::SansIQCurve::createFromInfo( const NC::Info& info)
   return SansIsotropic(iq.getQ(), iq.getI());
 }
 
+
+bool NCP::SansIQCurve::calSDL(const NC::Info& info, double &scatLenDensity, double &numberDensity) const
+{
+  scatLenDensity= 0.;
+  numberDensity =0.;
+  //calculate scattering length density from the dynamic info
+  if(info.hasDynamicInfo()&&info.hasNumberDensity())
+  {
+    numberDensity = info.getNumberDensity().dbl()*m_packfact*m_volfact;   // in atoms/Aa^3
+    for (auto& dyn : info.getDynamicInfoList())
+    {
+      double scl = dyn->atomDataSP()->coherentScatLen(); //in sqrt(barn)
+      double frac = dyn->fraction();
+      scatLenDensity += scl*frac*numberDensity;
+    }
+  }
+  else if(info.hasStructureInfo()&&info.hasAtomPositions())
+  {
+    auto &strInfo = info.getStructureInfo();
+    double perVolume = 1./strInfo.volume*m_packfact*m_volfact;//Aa^3
+
+    for(auto it = info.atomInfoBegin(); it != info.atomInfoEnd(); ++it)
+    {
+      double scl = it->atomData().coherentScatLen(); //in sqrt(barn)
+      scatLenDensity += scl*perVolume*it->numberPerUnitCell();
+      numberDensity += it->numberPerUnitCell()*perVolume;
+    }
+  }
+  else
+    return false;
+  return true;
+}
+
 NCP::SansIQCurve::IqCalType NCP::SansIQCurve::getIqCalType(const NC::Info::CustomSectionData& data) const
 {
   for(auto line:data)

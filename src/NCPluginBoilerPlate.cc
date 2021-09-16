@@ -10,8 +10,8 @@
 
 void NCP::registerPlugin()
 {
-  //This function is required for the plugin to work. It should register factories (or
-  //potentially other stuff, e.g. adding in-mem data files, etc.) for the
-  //plugin.
-  NC::registerFactory(std::make_unique<NCP::PluginFactory>());
+  //This function is required for the plugin to work. It should register
+  //factories (or potentially other stuff, e.g. adding in-mem data files, etc.)
+  //for the plugin.
+  NC::FactImpl::registerFactory(std::make_unique<NCP::PluginFactory>());
 };

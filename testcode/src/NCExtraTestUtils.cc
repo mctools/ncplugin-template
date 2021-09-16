@@ -4,8 +4,8 @@ std::vector<double> NCPluginTestCode::sampleAngles( const NCP::SansIsotropic& pm
 {
   std::vector<double> angles;
   angles.reserve(nvalues);
-  auto rng = NC::defaultRNG();
+  auto rng = NC::getRNG();
   for (unsigned i = 0; i < nvalues; ++i)
-    angles.push_back( std::acos( pm.sampleScatteringEvent(*rng,ekin).mu ) );
+    angles.push_back( std::acos( pm.sampleScatteringEvent(rng,ekin).mu ) );
   return angles;
 }
