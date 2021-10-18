@@ -1,10 +1,11 @@
 #ifndef NCPlugin_PhysicsModel_hh
 #define NCPlugin_PhysicsModel_hh
 
+
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
                                           //namespaces and aliases)
-
+#include "NCrystal/internal/NCIofQHelper.hh"
 namespace NCPluginNamespace {
 
   //We implement the actual physics model in this completely custom C++ helper
@@ -25,8 +26,10 @@ namespace NCPluginNamespace {
     static bool isApplicable( const NC::Info& );
     static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
 
-    //Constructor gets the constants of the piecewise power fit:
-    PhysicsModel( double A1, double b1, double A2, double b2, double Q0, double sigma0 );
+    //Constructor gets the filename of the input data file:
+    PhysicsModel(std::string filename );
+    //Constructor gets the models string and the param:
+    PhysicsModel( std::string model, NC::VectD& param );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -40,12 +43,9 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    double m_A1;
-    double m_b1;
-    double m_A2;
-    double m_b2;
-    double m_Q0;
-    double m_sigma0;
+    std::string m_model;
+    NC::VectD m_param;
+    NC::IofQHelper m_helper;
   };
 
 }

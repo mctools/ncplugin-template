@@ -89,6 +89,7 @@ NCMAT v3
 
 @CUSTOM_SANSND
 # custom physics that enables SANS for nanodiamond particles
-  2.0                                   # plugin version
-  teshi_xs    
+  1.0                                   # plugin version
+  132.869 -1.33605 0.0519763 -3.97314   # piecewise power law parameters (A1, b1, A2, b2)
+  0.0510821 5.551                       # boundary parameter and par for absolute cross section    
 

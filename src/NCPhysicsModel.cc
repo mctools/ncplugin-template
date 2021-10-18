@@ -4,6 +4,9 @@
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
 
+#include <algorithm>
+#include <sys/stat.h>
+#include <fstream>
 #include <iostream>
 
 bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
@@ -22,50 +25,159 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
     NCRYSTAL_THROW2(BadInput,"Multiple @CUSTOM_"<<pluginNameUpperCase()<<" sections are not allowed");
   auto data = info.getCustomSection( pluginNameUpperCase() );
 
-  // data is here a vector of lines, and each line is a vector of words. In our
+ // data is here a vector of lines, and each line is a vector of words. In our
   // case, we want to accept sections of the form (units are barn and angstrom as
   // is usual in NCrystal):
   //
   // @CUSTOM_SANSND
-  //    v                # plugin version
-  //    A_1 b_1 A_2 b_2  # piecewise power law parameters
-  //    Q_0 sigma_0      # boundary parameter and absolute cross section 
+  //    v                   # plugin version
+  //    filename            # read file mode
+  //   
+  //    or
+  //
+  //    v                   # plugin version
+  //    model               # which model 
+  //    parametrs           # paramters for the selected model
   //              
 
-  //Verify we have exactly three lines and 1-4-2 numbers:
-  if ( data.size() != 3 || data.at(0).size()!=1 || data.at(1).size()!=4 || data.at(2).size()!=2 )
-    NCRYSTAL_THROW2(BadInput,"Data in the @CUSTOM_"<<pluginNameUpperCase()
-                    <<" section should be three lines with 1-4-2 numbers");
-
+  bool file_mode=false;
+  //Verify we have exactly 1-2 (file_mode on) or 1-1 input (fit mode) :
+  if ( data.size() == 2 ) {
+    if ( data.at(0).size()!=1 || data.at(1).size()!=1 ) {
+    NCRYSTAL_THROW2(BadInput,"Bad input for file mode in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" section (see the plugin readme for more info).");
+    } else { file_mode=true; }   
+  } else if ( data.size() == 3 ) {
+    if ( data.at(0).size()!=1 || data.at(1).size()!=1 )
+    NCRYSTAL_THROW2(BadInput,"Bad input for fit mode in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" section (see the plugin readme for more info).")          
+  } else {
+    NCRYSTAL_THROW2(BadInput,"Bad input in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" section (see the plugin readme for more info).");    
+  }
   //Parse and validate values:
-  double supp_version = 1.0;
-  double version, A1, A2, b1, b2, Q0, sigma0 ;
-  if ( ! NC::safe_str2dbl( data.at(0).at(0), version )
-       || ! NC::safe_str2dbl( data.at(1).at(0), A1 )
-       || ! NC::safe_str2dbl( data.at(1).at(1), b1 )
-       || ! NC::safe_str2dbl( data.at(1).at(2), A2 )
-       || ! NC::safe_str2dbl( data.at(1).at(3), b2 )
-       || ! NC::safe_str2dbl( data.at(2).at(0), Q0 )
-       || ! NC::safe_str2dbl( data.at(2).at(1), sigma0 )
-       || !(Q0>0) || !(sigma0>0)) 
-    NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                     <<" section (see the plugin readme for more info)" );
+  double supp_version = 2.0;
+  double version;
+  NC::VectD param;
+  if ( ! NC::safe_str2dbl( data.at(0).at(0), version ))
+    NCRYSTAL_THROW2( BadInput,"Invalid version input in the @CUSTOM_"<<pluginNameUpperCase()
+                    <<" section (see the plugin readme for more info).");  
   //special warning for wrong version
   if ( ! (version==supp_version) ) 
     NCRYSTAL_THROW2( BadInput,"Invalid version specified for the "<<pluginNameUpperCase()
-                     <<" plugin. Only the version "<<supp_version<<" is supported." );
-
-  //Parsing done! Create and return our model:
-  return PhysicsModel(A1, b1, A2, b2, Q0,sigma0);
+                      <<" plugin. Only the version "<<supp_version<<" is supported." );
+  
+  if (file_mode){
+    std::string filename= data.at(1).at(0);
+    std::string root_rel = "../data/";
+    std::string rel_path = root_rel+filename;
+    //check existence
+    struct stat buffer;   
+    if (!(stat (rel_path.c_str(), &buffer) == 0))
+      NCRYSTAL_THROW2( BadInput,"The filename specified for the "<<pluginNameUpperCase()
+                      <<" plugin is invalid or the file could not be found in the data/ directory. " );
+    //Checks done! Create and return our model:
+    return PhysicsModel(filename);
+  } else {
+      std::string model = data.at(1).at(0);
+      if (model == "GP") {
+        double A, s, rg, m, p, sigma0;
+        if ( ! NC::safe_str2dbl( data.at(2).at(0), A )
+        || ! NC::safe_str2dbl( data.at(2).at(1), s )
+        || ! NC::safe_str2dbl( data.at(2).at(2), rg )
+        || ! NC::safe_str2dbl( data.at(2).at(3), m )
+        || ! NC::safe_str2dbl( data.at(2).at(4), p )
+        || !(sigma0>0)) {
+        NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
+                        <<" section (see the plugin readme for more info)" ); 
+                    } else {
+              //CHECK THE INPUT PARAM
+               
+              param.insert(param.end(), {A,s,rg,m,p});
+            }
+      } else if (model == "PPF") {
+        double A1, A2, b1, b2, Q0, sigma0 ;
+        if ( ! NC::safe_str2dbl( data.at(0).at(0), version )
+            || ! NC::safe_str2dbl( data.at(1).at(0), A1 )
+            || ! NC::safe_str2dbl( data.at(1).at(1), b1 )
+            || ! NC::safe_str2dbl( data.at(1).at(2), A2 )
+            || ! NC::safe_str2dbl( data.at(1).at(3), b2 )
+            || ! NC::safe_str2dbl( data.at(1).at(4), Q0 )
+            || ! NC::safe_str2dbl( data.at(1).at(5), sigma0 )
+            || !(Q0>0) || !(sigma0>0)) {
+        NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
+                        <<" section (see the plugin readme for more info)" );
+            } else {
+              //CHECK THE INPUT PARAM
+              nc_assert(Q0>0);
+              nc_assert(sigma0>0);
+              param.insert(param.end(), {A1,b1,A2,b2,Q0,sigma0});
+            }
+      } else {
+        NCRYSTAL_THROW2( BadInput,"Invalid model specified in the @CUSTOM_"<<pluginNameUpperCase()
+                        <<" section (see the plugin readme for more info)" );
+      }
+      //Parsing done! Create and return our model:
+      return PhysicsModel(model,param);
+  }
+  
 }
 
-NCP::PhysicsModel::PhysicsModel( double A1, double b1, double A2, double b2, double Q0, double sigma0 )
-  : m_A1(A1),
-    m_b1(b1),
-    m_A2(A2),
-    m_b2(b2),
-    m_Q0(Q0),
-    m_sigma0(sigma0)
+NCP::PhysicsModel::PhysicsModel( std::string model, NC::VectD& param )
+  : m_model(model),
+    m_param(param),
+    m_helper(([this]() -> NC::IofQHelper { 
+      
+      //Generate vector of data q and IofQ
+      NC::VectD q = NC::logspace(-4,1,10000);
+      NC::VectD IofQ = q;
+      if (m_model == "GP") {
+        double A=m_param.at(0);
+        double s=m_param.at(1);
+        double rg=m_param.at(2);
+        double m=m_param.at(3);
+        double p=m_param.at(4);
+        //evaluate Q1 where IofQ stops being evaluated as Guinier and Porod starts
+        double Q1 = 1.0/rg*std::sqrt((m-s)*(3-s)/2);
+        //IofQ still filled with q here
+        auto it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
+        //Approximation valid as long as we have high sampling. Otherwise interpolation needed
+        if (it_q1==IofQ.end()) 
+          NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
+                            <<" section (see the plugin readme for more info)" );
+        double B = std::pow(Q1,m-s)*std::exp((-Q1*Q1*rg*rg)/(3-s));
+        std::for_each(IofQ.begin(),it_q1,
+                      [A,s,rg](double &x) { x = A*std::pow(x,-s)*std::exp((-x*x*rg*rg)/(3-s));}
+                      ); 
+        std::advance(it_q1,1);
+        std::for_each(it_q1,IofQ.end(),
+                      [A,B,m](double &x) { x = A*B*std::pow(x,-m);}
+                      );
+      } else if (m_model == "PPF") {
+        double A1=m_param.at(0);
+        double b1=m_param.at(1);
+        double A2=m_param.at(2);
+        double b2=m_param.at(3);
+        double Q0=m_param.at(4);
+        double sigma0=m_param.at(5);
+        //evaluate Q1 where IofQ stops being evaluated as Guinier and Porod starts
+        //IofQ still filled with q here
+        auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
+        if (it_q0==IofQ.end()) 
+          NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q0 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
+                            <<" section (see the plugin readme for more info)" );
+        std::for_each(IofQ.begin(),it_q0,
+                      [A1,b1](double &x) { x = A1*std::pow(x,-b1);}
+                      ); 
+        std::advance(it_q0,1);
+        std::for_each(it_q0,IofQ.end(),
+                      [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
+                      );    
+      }     
+      //Initialize the helper           
+      NC::IofQHelper helper(q,IofQ);
+      return helper;
+    })())
 {
   //Important note to developers who are using the infrastructure in the
   //testcode/ subdirectory: If you change the number or types of the arguments
@@ -74,32 +186,56 @@ NCP::PhysicsModel::PhysicsModel( double A1, double b1, double A2, double b2, dou
   //__init__.py, and NCForPython.cc - that way you can still instantiate your
   //model directly from your python test code).
 
-  nc_assert( m_Q0 > 0.0 );
-  nc_assert( m_sigma0 > 0.0 );
+  
 }
+
+NCP::PhysicsModel::PhysicsModel(std::string filename)
+  : m_model(),
+    m_param(),
+    m_helper(([filename]() -> NC::IofQHelper {
+      
+      //Parse the input file and create the vector with the q, Iq info
+      NC::VectD q;
+      NC::VectD IofQ;
+      std::string root_rel = "data/";
+      std::string rel_path = root_rel+filename;
+      std::ifstream input_file(rel_path);
+      if(input_file) {
+        double temp_x, temp_y;
+        std::string line;
+        while (std::getline(input_file, line)){
+              std::istringstream iss(line);
+              iss >> temp_x >> temp_y;
+              q.push_back(temp_x);
+              IofQ.push_back(temp_y);
+        }
+      } else {
+        NCRYSTAL_THROW2( BadInput,rel_path << ": Invalid data file for the "<<pluginNameUpperCase()
+                        <<" plugin" );   
+      }
+      /*for(auto i :q){
+        std::cout<<i<<std::endl;;
+      }*/ 
+      NC::IofQHelper helper(q,IofQ);
+      return helper;
+        })())
+{   
+  
+};
 
 double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
+  NC::NeutronEnergy ekin(neutron_ekin);
   double k =  NC::k2Pi/ NC::ekin2wl(neutron_ekin); //wavevector
-  double total_sigma = (m_sigma0/(2*k*k))*(m_A1/(m_b1+2)*std::pow(m_Q0,m_b1+2) + m_A2/(m_b2+2)*std::pow(2*k,m_b2+2) - m_A2/(m_b2+2)*std::pow(m_Q0,m_b2+2));
-  return total_sigma;
+  double SANS_xs = 1.0/(2*k*k)*m_helper.calcQIofQIntegral(ekin);
+  return SANS_xs;
 }
 
 double NCP::PhysicsModel::sampleScatteringVector( NC::RNG& rng, double neutron_ekin ) const 
 {
   double rand = rng.generate();
-  double Q;
-  double k =  NC::k2Pi/NC::ekin2wl(neutron_ekin); //wavevector
   //sample a random scattering vector Q from the inverse CDF (see plugin readme)
-  double ratio_sigma = (m_sigma0/(2*k*k))/calcCrossSection(neutron_ekin); //cross section over total cross section ratio
-  double CDF_Q0 = (m_A1*std::pow(m_Q0, m_b1+2)/(m_b1+2))*ratio_sigma;
-  if(rand < CDF_Q0){
-    Q = std::pow(((m_b1+2)*rand/m_A1)/ratio_sigma, 1/(m_b1+2));
-  } else {
-    Q = std::pow((rand/ratio_sigma - (m_A1/(m_b1+2))*std::pow(m_Q0,m_b1+2) + (m_A2/(m_b2+2))*std::pow(m_Q0,m_b2+2))*(m_b2+2)/m_A2, 1/(m_b2+2));
-  }
-
-  return Q;
+  return rand;
 }
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
