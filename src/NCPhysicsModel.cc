@@ -98,13 +98,12 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
             }
       } else if (model == "PPF") {
         double A1, A2, b1, b2, Q0, sigma0 ;
-        if ( ! NC::safe_str2dbl( data.at(0).at(0), version )
-            || ! NC::safe_str2dbl( data.at(1).at(0), A1 )
-            || ! NC::safe_str2dbl( data.at(1).at(1), b1 )
-            || ! NC::safe_str2dbl( data.at(1).at(2), A2 )
-            || ! NC::safe_str2dbl( data.at(1).at(3), b2 )
-            || ! NC::safe_str2dbl( data.at(1).at(4), Q0 )
-            || ! NC::safe_str2dbl( data.at(1).at(5), sigma0 )
+        if ( ! NC::safe_str2dbl( data.at(2).at(0), A1 )
+            || ! NC::safe_str2dbl( data.at(2).at(1), b1 )
+            || ! NC::safe_str2dbl( data.at(2).at(2), A2 )
+            || ! NC::safe_str2dbl( data.at(2).at(3), b2 )
+            || ! NC::safe_str2dbl( data.at(2).at(4), Q0 )
+            || ! NC::safe_str2dbl( data.at(2).at(5), sigma0 )
             || !(Q0>0) || !(sigma0>0)) {
         NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" );
