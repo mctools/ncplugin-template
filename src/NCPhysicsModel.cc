@@ -105,6 +105,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
             || ! NC::safe_str2dbl( data.at(2).at(4), Q0 )
             || ! NC::safe_str2dbl( data.at(2).at(5), sigma0 )
             || !(Q0>0) || !(sigma0>0)) {
+              std::cout << A1 << " " << b1 << " " << A2 << " " << b2 << " " << Q0 << " " << sigma0 << std::endl;
         NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" );
             } else {
