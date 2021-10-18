@@ -69,8 +69,9 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
   
   if (file_mode){
     std::string filename= data.at(1).at(0);
-    std::string root_rel = "../data/";
+    std::string root_rel = "data/";
     std::string rel_path = root_rel+filename;
+    std::cout << rel_path << std::endl;
     //check existence
     struct stat buffer;   
     if (!(stat (rel_path.c_str(), &buffer) == 0))
