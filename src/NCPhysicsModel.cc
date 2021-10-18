@@ -58,7 +58,8 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
   //Parse and validate values:
   double supp_version = 2.0;
   double version;
-  NC::VectD param;
+  //NC::VectD param;
+  double p0,p1,p2,p3,p4;
   if ( ! NC::safe_str2dbl( data.at(0).at(0), version ))
     NCRYSTAL_THROW2( BadInput,"Invalid version input in the @CUSTOM_"<<pluginNameUpperCase()
                     <<" section (see the plugin readme for more info).");  
@@ -82,51 +83,48 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
   } else {
       std::string model = data.at(1).at(0);
       if (model == "GP") {
-        double A, s, rg, m, p, sigma0;
-        if ( ! NC::safe_str2dbl( data.at(2).at(0), A )
-        || ! NC::safe_str2dbl( data.at(2).at(1), s )
-        || ! NC::safe_str2dbl( data.at(2).at(2), rg )
-        || ! NC::safe_str2dbl( data.at(2).at(3), m )
-        || ! NC::safe_str2dbl( data.at(2).at(4), p )
-        || !(sigma0>0)) {
+        if ( ! NC::safe_str2dbl( data.at(2).at(0), p0 )
+        || ! NC::safe_str2dbl( data.at(2).at(1), p1 )
+        || ! NC::safe_str2dbl( data.at(2).at(2), p2 )
+        || ! NC::safe_str2dbl( data.at(2).at(3), p3 )
+        || ! NC::safe_str2dbl( data.at(2).at(4), p4 )
+         ) {
         NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" ); 
                     } else {
               //CHECK THE INPUT PARAM
                
-              param.insert(param.end(), {A,s,rg,m,p});
+              //param.insert(param.end(), {A,s,rg,m,p});
             }
       } else if (model == "PPF") {
-        double A1, A2, b1, b2, Q0, sigma0 ;
-        if ( ! NC::safe_str2dbl( data.at(2).at(0), A1 )
-            || ! NC::safe_str2dbl( data.at(2).at(1), b1 )
-            || ! NC::safe_str2dbl( data.at(2).at(2), A2 )
-            || ! NC::safe_str2dbl( data.at(2).at(3), b2 )
-            || ! NC::safe_str2dbl( data.at(2).at(4), Q0 )
-            || ! NC::safe_str2dbl( data.at(2).at(5), sigma0 )
-            || !(Q0>0) || !(sigma0>0)) {
-              std::cout << A1 << " " << b1 << " " << A2 << " " << b2 << " " << Q0 << " " << sigma0 << std::endl;
+        if ( ! NC::safe_str2dbl( data.at(2).at(0), p0 )
+            || ! NC::safe_str2dbl( data.at(2).at(1), p1 )
+            || ! NC::safe_str2dbl( data.at(2).at(2), p2 )
+            || ! NC::safe_str2dbl( data.at(2).at(3), p3 )
+            || ! NC::safe_str2dbl( data.at(2).at(4), p4 )
+            //|| ! NC::safe_str2dbl( data.at(2).at(5), sigma0 )
+         ) {
         NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" );
             } else {
               //CHECK THE INPUT PARAM
-              nc_assert(Q0>0);
-              nc_assert(sigma0>0);
-              param.insert(param.end(), {A1,b1,A2,b2,Q0,sigma0});
+              //nc_assert(Q0>0);
+              //nc_assert(sigma0>0);
+              //param.insert(param.end(), {A1,b1,A2,b2,Q0,sigma0});
             }
       } else {
         NCRYSTAL_THROW2( BadInput,"Invalid model specified in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" );
       }
       //Parsing done! Create and return our model:
-      return PhysicsModel(model,param);
+      return PhysicsModel(model,p0,p1,p2,p3,p4);
   }
   
 }
 
-NCP::PhysicsModel::PhysicsModel( std::string model, NC::VectD& param )
+NCP::PhysicsModel::PhysicsModel( std::string model, double p0, double p1, double p2, double p3, double p4 )
   : m_model(model),
-    m_param(param),
+    m_param({p0,p1,p2,p3,p4}),
     m_helper(([this]() -> NC::IofQHelper { 
       
       //Generate vector of data q and IofQ
@@ -160,7 +158,7 @@ NCP::PhysicsModel::PhysicsModel( std::string model, NC::VectD& param )
         double A2=m_param.at(2);
         double b2=m_param.at(3);
         double Q0=m_param.at(4);
-        double sigma0=m_param.at(5);
+        //double sigma0=m_param.at(5);
 
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
         if (it_q0==IofQ.end()) 

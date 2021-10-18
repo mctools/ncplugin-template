@@ -25,7 +25,7 @@ A2=0.0519763
 b2=-3.97314
 Q0=0.0510821
 sigma0=5.551
-version = 1.0
+version = 2.0
 
 dummyal="""NCMAT v3
 #Diamond.
@@ -115,8 +115,9 @@ dummyal="""NCMAT v3
 """
 
 
-customsection='@CUSTOM_%s\n  %g\n%g %g %g %g\n %g %g'% ( ncplugin.pluginName().upper(),
+customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g %g'% ( "SANSND", 
                                         version,
+                                        "PPF",
                                         A1,b1,A2,b2,
                                         Q0,sigma0 )
 NC.registerInMemoryFileData('stdDiamond.ncmat', dummyal)
@@ -130,16 +131,21 @@ sc_std = NC.createScatter("stdDiamond.ncmat")
 #sc_std_incelas_only = NC.createScatter("stdDiamond.ncmat;inelas=0;coh_elas=0")
 sc_plugin = NC.createScatter("customDiamond.ncmat")
 #sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
-
+sc_plugin_2 = NC.createScatter("ncplugin-SANSND_nanodiamond.ncmat")
+#sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
 ######################################################################
 #
 # Plot with matplotlib:
 #
 #wls = np.linspace(0.01,10.0,1000)
 plt.figure(num='Benchmark')
-ekins = np.linspace(1e-5,100,1000000)
-plt.plot( ekins, sc_std.xsect(wl=NC.ekin2wl(ekins)), label='Standard NCrystal' )
-plt.plot( ekins, sc_plugin.xsect(wl=NC.ekin2wl(ekins)), label='With SANS' )
+energies = np.logspace(-5,1,10000)
+xs =  sc_plugin.crossSectionNonOriented(energies)
+xs_2 =  sc_plugin.crossSectionNonOriented(energies)
+xs_std = sc_std.crossSectionNonOriented(energies)
+plt.plot(energies, xs_std, label="Standard NCrystal",color="tab:green")
+plt.plot(energies, xs, label="NCrystal+Plugin", color="tab:orange")
+plt.plot(energies, xs_2, label="NCrystal+Plugin2", color="tab:blue")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
 
@@ -149,9 +155,9 @@ plt.plot( ekins, sc_plugin.xsect(wl=NC.ekin2wl(ekins)), label='With SANS' )
 # custom python hooks, without going through the standard NCrystal
 # infrastructure:
 #
-pm = ncplugin.PhysicsModel( A1=A1, b1=b1, A2=A2, b2=b2, Q0=Q0, sigma0=sigma0)
-plt.plot(ekins, pm.calcCrossSection(ekins),
-         ls=':',lw=1, color='dimgray',label='Only SANS')
+#pm = ncplugin.PhysicsModel( A1=A1, b1=b1, A2=A2, b2=b2, Q0=Q0, sigma0=sigma0)
+#plt.plot(ekins, pm.calcCrossSection(ekins),
+#         ls=':',lw=1, color='dimgray',label='Only SANS')
 
 ######################################################################
 teshi_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/teshi.dat", sep=" ")

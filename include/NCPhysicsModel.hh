@@ -29,7 +29,7 @@ namespace NCPluginNamespace {
     //Constructor gets the filename of the input data file:
     PhysicsModel(std::string filename );
     //Constructor gets the models string and the param:
-    PhysicsModel( std::string model, NC::VectD& param );
+    PhysicsModel( std::string model, double p0, double p1, double p2, double p3, double p4 );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
