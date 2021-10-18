@@ -160,18 +160,17 @@ NCP::PhysicsModel::PhysicsModel( std::string model, NC::VectD& param )
         double b2=m_param.at(3);
         double Q0=m_param.at(4);
         double sigma0=m_param.at(5);
-        //evaluate Q1 where IofQ stops being evaluated as Guinier and Porod starts
-        //IofQ still filled with q here
+
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
         if (it_q0==IofQ.end()) 
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q0 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
                             <<" section (see the plugin readme for more info)" );
         std::for_each(IofQ.begin(),it_q0,
-                      [A1,b1](double &x) { x = A1*std::pow(x,-b1);}
+                      [A1,b1](double &x) { x = A1*std::pow(x,b1);}
                       ); 
         std::advance(it_q0,1);
         std::for_each(it_q0,IofQ.end(),
-                      [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
+                      [A2,b2](double &x) { x = A2*std::pow(x,b2);}
                       );    
       }     
       //Initialize the helper           
@@ -227,7 +226,7 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
   NC::NeutronEnergy ekin(neutron_ekin);
   double k =  NC::k2Pi/ NC::ekin2wl(neutron_ekin); //wavevector
-  double SANS_xs = 1.0/(2*k*k)*m_helper.calcQIofQIntegral(ekin);
+  double SANS_xs = 5.551/(2*k*k)*m_helper.calcQIofQIntegral(ekin);
   return SANS_xs;
 }
 
