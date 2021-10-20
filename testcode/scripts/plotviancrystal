@@ -20,14 +20,22 @@ ncplugin.registerPlugin()#<---register our plugin with NCrystal
 #
 
 A1=132.869
-b1=-1.33605
+b1=1.33605
 A2=0.0519763
-b2=-3.97314
+b2=3.97314
 Q0=0.0510821
 sigma0=5.551
+
+A=66
+s=1.5
+rg=14.64
+m=4.15
+p=2.13
+sigma0=5.551
+
 version = 2.0
 
-dummyal="""NCMAT v3
+dummyal="""NCMAT v5
 #Diamond.
 #
 #Crystal structure was converted from the cif file of the entry 0011242 in the AMCSD.
@@ -44,6 +52,9 @@ dummyal="""NCMAT v3
 #   Phys. Rev. B 60, 9444 - Published 1 October 1999
 #   https://doi.org/10.1103/PhysRevB.60.9444
 #
+#Finally here is "magic comment" which ensures that NCrystal will model this as
+#a diamond powder with lower density than Diamond:
+#NCRYSTALMATCFG[packfact=0.1828]
 @CELL
   lengths 3.56679 3.56679 3.56679
   angles 90 90 90
@@ -58,8 +69,6 @@ dummyal="""NCMAT v3
   C 3/4 3/4 1/4
   C 0   1/2 1/2
   C 3/4 1/4 3/4
-@DEBYETEMPERATURE
-  C 1920.3
 @DYNINFO
   element  C
   fraction 1
@@ -115,11 +124,16 @@ dummyal="""NCMAT v3
 """
 
 
-customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g %g'% ( "SANSND", 
-                                        version,
-                                        "PPF",
-                                        A1,b1,A2,b2,
-                                        Q0,sigma0 )
+#customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+#                                        version,
+#                                        "GP",
+#                                        A,s,rg,m,p)
+#                                        A1,b1,A2,b2,Q0 )
+
+customsection='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
+                                       version,
+                                        "teshi_xs")
+
 NC.registerInMemoryFileData('stdDiamond.ncmat', dummyal)
 NC.registerInMemoryFileData('customDiamond.ncmat', dummyal+customsection)
 
@@ -131,8 +145,6 @@ sc_std = NC.createScatter("stdDiamond.ncmat")
 #sc_std_incelas_only = NC.createScatter("stdDiamond.ncmat;inelas=0;coh_elas=0")
 sc_plugin = NC.createScatter("customDiamond.ncmat")
 #sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
-sc_plugin_2 = NC.createScatter("ncplugin-SANSND_nanodiamond.ncmat")
-#sc_plugin_incelas_only = NC.createScatter("customDiamond.ncmat;inelas=0;coh_elas=0")
 ######################################################################
 #
 # Plot with matplotlib:
@@ -141,11 +153,9 @@ sc_plugin_2 = NC.createScatter("ncplugin-SANSND_nanodiamond.ncmat")
 plt.figure(num='Benchmark')
 energies = np.logspace(-5,1,10000)
 xs =  sc_plugin.crossSectionNonOriented(energies)
-xs_2 =  sc_plugin.crossSectionNonOriented(energies)
 xs_std = sc_std.crossSectionNonOriented(energies)
 plt.plot(energies, xs_std, label="Standard NCrystal",color="tab:green")
 plt.plot(energies, xs, label="NCrystal+Plugin", color="tab:orange")
-plt.plot(energies, xs_2, label="NCrystal+Plugin2", color="tab:blue")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
 

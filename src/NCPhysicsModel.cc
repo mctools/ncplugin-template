@@ -87,14 +87,13 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
         || ! NC::safe_str2dbl( data.at(2).at(1), p1 )
         || ! NC::safe_str2dbl( data.at(2).at(2), p2 )
         || ! NC::safe_str2dbl( data.at(2).at(3), p3 )
-        || ! NC::safe_str2dbl( data.at(2).at(4), p4 )
          ) {
         NCRYSTAL_THROW2( BadInput,"Invalid values specified for " << model << " model in the @CUSTOM_"<<pluginNameUpperCase()
                         <<" section (see the plugin readme for more info)" ); 
                     } else {
               //CHECK THE INPUT PARAM
                
-              //param.insert(param.end(), {A,s,rg,m,p});
+              //param.insert(param.end(), {A,s,rg,m});
             }
       } else if (model == "PPF") {
         if ( ! NC::safe_str2dbl( data.at(2).at(0), p0 )
@@ -135,7 +134,6 @@ NCP::PhysicsModel::PhysicsModel( std::string model, double p0, double p1, double
         double s=m_param.at(1);
         double rg=m_param.at(2);
         double m=m_param.at(3);
-        double p=m_param.at(4);
         //evaluate Q1 where IofQ stops being evaluated as Guinier and Porod starts
         double Q1 = 1.0/rg*std::sqrt((m-s)*(3-s)/2);
         //IofQ still filled with q here
@@ -165,11 +163,11 @@ NCP::PhysicsModel::PhysicsModel( std::string model, double p0, double p1, double
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q0 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
                             <<" section (see the plugin readme for more info)" );
         std::for_each(IofQ.begin(),it_q0,
-                      [A1,b1](double &x) { x = A1*std::pow(x,b1);}
+                      [A1,b1](double &x) { x = A1*std::pow(x,-b1);}
                       ); 
         std::advance(it_q0,1);
         std::for_each(it_q0,IofQ.end(),
-                      [A2,b2](double &x) { x = A2*std::pow(x,b2);}
+                      [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
                       );    
       }     
       //Initialize the helper           
