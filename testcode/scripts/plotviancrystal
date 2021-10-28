@@ -35,7 +35,7 @@ sigma0=5.551
 
 version = 2.0
 
-dummyal="""NCMAT v5
+dummyal="""NCMAT v3
 #Diamond.
 #
 #Crystal structure was converted from the cif file of the entry 0011242 in the AMCSD.
@@ -52,9 +52,6 @@ dummyal="""NCMAT v5
 #   Phys. Rev. B 60, 9444 - Published 1 October 1999
 #   https://doi.org/10.1103/PhysRevB.60.9444
 #
-#Finally here is "magic comment" which ensures that NCrystal will model this as
-#a diamond powder with lower density than Diamond:
-#NCRYSTALMATCFG[packfact=0.1828]
 @CELL
   lengths 3.56679 3.56679 3.56679
   angles 90 90 90
@@ -69,6 +66,8 @@ dummyal="""NCMAT v5
   C 3/4 3/4 1/4
   C 0   1/2 1/2
   C 3/4 1/4 3/4
+@DEBYETEMPERATURE
+  C 1920.3
 @DYNINFO
   element  C
   fraction 1
@@ -124,15 +123,20 @@ dummyal="""NCMAT v5
 """
 
 
-customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
-                                        version,
-                                        "GP",
-                                        A,s,rg,m,p)
+#customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+#                                        version,
+#                                        "GP",
+#                                        A,s,rg,m,p)
 #                                        A1,b1,A2,b2,Q0 )
 
-#customsection='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
+customsection='@CUSTOM_%s\n  %g\n %s'% ("SANSND", 
+                                       version,
+                                        "teshi_xs")
+                      
+#customsection='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
 #                                       version,
-#                                        "teshi_xs")
+#                                        "NP-FBA",
+#                                        2)
 
 NC.registerInMemoryFileData('stdDiamond.ncmat', dummyal)
 NC.registerInMemoryFileData('customDiamond.ncmat', dummyal+customsection)
