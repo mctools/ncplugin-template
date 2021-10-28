@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas
 ncplugin.registerPlugin()#<---register our plugin with NCrystal
-
+#
 ######################################################################
 #
 # For the test here we register two custom data files with NCrystal,
@@ -124,15 +124,15 @@ dummyal="""NCMAT v5
 """
 
 
-#customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
-#                                        version,
-#                                        "GP",
-#                                        A,s,rg,m,p)
+customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+                                        version,
+                                        "GP",
+                                        A,s,rg,m,p)
 #                                        A1,b1,A2,b2,Q0 )
 
-customsection='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
-                                       version,
-                                        "teshi_xs")
+#customsection='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
+#                                       version,
+#                                        "teshi_xs")
 
 NC.registerInMemoryFileData('stdDiamond.ncmat', dummyal)
 NC.registerInMemoryFileData('customDiamond.ncmat', dummyal+customsection)

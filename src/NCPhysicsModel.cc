@@ -186,7 +186,7 @@ NCP::PhysicsModel::PhysicsModel( std::string model, double p0, double p1, double
 }
 
 NCP::PhysicsModel::PhysicsModel(std::string filename)
-  : m_model(),
+  : m_model("file"),
     m_param(),
     m_helper(([filename]() -> NC::IofQHelper {
       
@@ -229,9 +229,10 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 
 double NCP::PhysicsModel::sampleScatteringVector( NC::RNG& rng, double neutron_ekin ) const 
 {
-  double rand = rng.generate();
-  //sample a random scattering vector Q from the inverse CDF (see plugin readme)
-  return rand;
+  //Could use just the helper method but in this way we keep the same structure 
+  NC::NeutronEnergy ekin(neutron_ekin);
+  double Q = m_helper.sampleQValue(rng,ekin);  
+  return Q;
 }
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
