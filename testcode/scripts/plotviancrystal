@@ -35,7 +35,7 @@ sigma0=5.551
 
 version = 2.0
 
-dummyal="""NCMAT v3
+dummyal="""NCMAT v5
 #Diamond.
 #
 #Crystal structure was converted from the cif file of the entry 0011242 in the AMCSD.
@@ -66,8 +66,6 @@ dummyal="""NCMAT v3
   C 3/4 3/4 1/4
   C 0   1/2 1/2
   C 3/4 1/4 3/4
-@DEBYETEMPERATURE
-  C 1920.3
 @DYNINFO
   element  C
   fraction 1
