@@ -129,7 +129,7 @@ dummyal="""NCMAT v3
 #                                        A,s,rg,m,p)
 #                                        A1,b1,A2,b2,Q0 )
 
-customsection='@CUSTOM_%s\n  %g\n %s'% ("SANSND", 
+customsection='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
                                        version,
                                         "teshi_xs")
                       

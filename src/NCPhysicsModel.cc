@@ -90,6 +90,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
       NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
                                                                   << " plugin is invalid or the file could not be found in the data/ directory. ");
     // Checks done! Create and return our model:
+    std::cout << "File mode" << std::endl;
     return PhysicsModel(filename);
   }
   else
@@ -105,7 +106,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
       else
       {
         // CHECK THE INPUT PARAM
-
+        std::cout << "GP mode" << std::endl;
         // param.insert(param.end(), {A,s,rg,m});
       }
     }
@@ -124,6 +125,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
         // nc_assert(Q0>0);
         // nc_assert(sigma0>0);
         // param.insert(param.end(), {A1,b1,A2,b2,Q0,sigma0});
+        std::cout << "PPF mode" << std::endl;
       }
     }
     else if (model == "NP-FBA")
@@ -141,6 +143,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
         // nc_assert(R>0);
         // nc_assert(sigma0>0);
         // param.insert(param.end(), {R,sigma0});
+        std::cout << "NP-FBA mode" << std::endl;
       }
     }
     else
@@ -160,7 +163,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
                 { 
       
       //Generate vector of data q and IofQ
-      NC::VectD q = NC::logspace(-4,1,10000);
+      NC::VectD q = NC::logspace(-5,1,100000);
       NC::VectD IofQ = q;
       if (m_model == "GP") {
         double A=m_param.at(0);
@@ -189,7 +192,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
         double A2=m_param.at(2);
         double b2=m_param.at(3);
         double Q0=m_param.at(4);
-        //double sigma0=m_param.at(5);
+        
 
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
         if (it_q0==IofQ.end()) 
@@ -217,8 +220,8 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
 }
 
 NCP::PhysicsModel::PhysicsModel(std::string filename)
-    : m_model("file"),
-      m_param(),
+    : m_model(),
+      m_param(),  
       m_helper(([filename]() -> NC::IofQHelper
                 {
       
@@ -228,6 +231,7 @@ NCP::PhysicsModel::PhysicsModel(std::string filename)
       std::string root_rel = "data/";
       std::string rel_path = root_rel+filename;
       std::ifstream input_file(rel_path);
+      std::cout << rel_path << std::endl;
       if(input_file) {
         double temp_x, temp_y;
         std::string line;
@@ -237,6 +241,7 @@ NCP::PhysicsModel::PhysicsModel(std::string filename)
               q.push_back(temp_x);
               IofQ.push_back(temp_y);
         }
+        std::cout << q.at(0) << std::endl;
       } else {
         NCRYSTAL_THROW2( BadInput,rel_path << ": Invalid data file for the "<<pluginNameUpperCase()
                         <<" plugin" );   
@@ -268,7 +273,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   }
   else
   {
-    SANS_xs = 5.551 / (2 * k * k) * m_helper.calcQIofQIntegral(ekin);
+    SANS_xs = 1 / (2 * k * k) * m_helper.calcQIofQIntegral(ekin);
   }
   return SANS_xs;
 }
