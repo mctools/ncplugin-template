@@ -52,3 +52,6 @@ testcode/data/9CC7D60B.tmp:Zone.Identifier
 testcode/data/3DCFA2D9.tmp:Zone.Identifier
 boost
 testcode/data/Ersez_dataset:Zone.Identifier
+testcode/data/*:Zone.Identifier
+testcode/data/muvals
+testcode/data/muvals_files

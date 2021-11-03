@@ -4,23 +4,34 @@ import ncplugin
 import NCrystal as NC
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
 
-physmodel = ncplugin.PhysicsModel(A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=5.551)
-
-nsample = int(1e6)#Warning consumes nsample*8 bytes of memory, so don't be silly
+#physmodel = ncplugin.PhysicsModel(b"PPF", A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=5.551)
+physmodel = ncplugin.PhysicsModel(b"teshi_xs")
+physmodel2 = ncplugin.PhysicsModel(b"Ersez_data_corr")
+#physmodel = ncplugin.PhysicsModel(b"GP", p0=66,p1=1.5,p2=14.64, p3=4.15, p4=2.13)
+#physmodel2 = ncplugin.PhysicsModel(b"simple",p0=66,p1=1.5,p2=14.64, p3=4.15, p4=2.13)
+nsample = int(1e7)#Warning consumes nsample*8 bytes of memory, so don't be sillys
                   #and put to 1e10 (if such large numbers are needed, rewrite
                   #code below as loop which samples e.g. 1e6 at a time).
 
-nbins = 180
-for wl in np.arange(22,0.5,-7):
-    muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
-    print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
-    plt.hist(muvals, bins=nbins,alpha=0.5, label=f'wavelength {wl} Å')
+nbins = 200
+wl = 1.98
+muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
+print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
+plt.hist(muvals, bins=nbins,alpha=0.5, label=f'teshi_xs',range=(0.8,1),color="k", fill=False,histtype="step")
 
+muvals2 = physmodel2.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
+print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
+plt.hist(muvals2, bins=nbins,alpha=0.5, label=f'Ersez_data_corr',range=(0.8,1),color="r", fill=False,histtype="step")
+
+with open("data/muvals_files", "wb") as f: 
+    pickle.dump(zip(muvals, muvals2),f)
+f.close()
 #An isotropic distrigbution is constant wrt mu:
 #plt.plot( [0.9,1.0],[len(muvals)/nbins]*2 ,label = 'Isotropic', color='red' )
 
-plt.title(r'$\mu=\cos(\theta)$' + f' distribution in {float(len(muvals)):g} scattering events')
+plt.title(r'$\mu=\cos(\theta)$' + f' distribution in {float(nsample):g} scattering events'+ r' $\lambda=1.98\AA$')
 plt.legend()
 plt.xlabel(r'$\mu=\cos(\theta)$')
 plt.yscale('log')
