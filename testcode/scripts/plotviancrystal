@@ -31,7 +31,7 @@ rg=14.64
 m=4.15
 p=2.13
 
-R=2.5
+R=0.27
 
 version = 2.0
 
@@ -141,7 +141,7 @@ customsection4='@CUSTOM_%s\n  %g\n %s'% ( "SANSND",
 customsection5='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
                                        version,
                                         "NP-FBA",
-                                        "teshi_R_dist" )
+                                        R )
                       
 #customsection='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
 #                                       version,
@@ -190,7 +190,7 @@ plt.plot(energies, xs, label="PPF", color="tab:orange")
 plt.plot(energies, xs2, label="GP", color="tab:green")
 plt.plot(energies, xs3, label="Teshi", color="tab:blue")
 plt.plot(energies, xs4, label="Ersez", color="tab:red")
-#plt.plot(energies, xs5, label="FBA", color="tab:brown")
+plt.plot(energies, xs5, label="FBA", color="tab:brown")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
 

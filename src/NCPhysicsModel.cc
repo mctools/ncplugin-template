@@ -132,24 +132,28 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     }
     else if (model == "NP-FBA")
     {
-      std::string filename = data.at(2).at(0);
-      std::string root_rel = "data/";
-      std::string rel_path = root_rel + filename;
-      std::cout << "Input file: " << rel_path << std::endl;
-      // check existence
-      struct stat buffer;
-      if (!(stat(rel_path.c_str(), &buffer) == 0))
-      {
-        NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
-                                                                    << " plugin is invalid or the file could not be found in the data/ directory. ");
-      }
-      else
-      {
-        // CHECK THE INPUT PARAM
-        // nc_assert(R>0);
-        // param.insert(param.end(), {R});}
-        return PhysicsModel(model = model, filename = filename);
-      }
+      if (NC::safe_str2dbl(data.at(2).at(0), p0)){
+        return PhysicsModel(model , p0 );
+      } else {
+        std::string filename = data.at(2).at(0);
+        std::string root_rel = "data/";
+        std::string rel_path = root_rel + filename;
+        std::cout << "Input file: " << rel_path << std::endl;
+        // check existence
+        struct stat buffer;
+        if (!(stat(rel_path.c_str(), &buffer) == 0))
+        {
+          NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
+                                                                      << " plugin is invalid or the file could not be found in the data/ directory. ");
+        }
+        else
+        {
+          // CHECK THE INPUT PARAM
+          // nc_assert(R>0);
+          // param.insert(param.end(), {R});}
+          return PhysicsModel(model , filename );
+        }    
+      }  
     }
     else if (model == "simple")
     {
@@ -247,6 +251,12 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
   // model directly from your python test code).
 }
 
+NCP::PhysicsModel::PhysicsModel(std::string model, double mono_R)
+    : m_model(model),
+      m_mono_R(mono_R)
+{
+};
+
 NCP::PhysicsModel::PhysicsModel(std::string model, std::string filename)
     : m_model(model),
       m_R(),
@@ -321,7 +331,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   {
     SANS_xs = 8.1 * 25.3e-3 / neutron_ekin;
   }
-  else if (m_model == "NP-FBA" && m_R.has_value() && m_freq.has_value())
+  else if (m_model == "NP-FBA")
   {
     // h_bar = 1.054571817e-34 ;//[J*s] <- Reduced planck constant
     // m = 1.674927498e-27;// [Kg] <- neutron mass
@@ -330,15 +340,22 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
     double physical_constant = 1.2307e+33;
     SANS_xs = 0;
     double R, freq, _2kr, I;
-    for (size_t i = 0; i < m_R.value().size(); ++i)
-    {
-      R = m_R.value().at(i) * 10; // converto to AA
-      freq = m_freq.value().at(i);
-      _2kr = 2 * k * R;
-      I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
-      SANS_xs += freq * std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
+    if (m_R.has_value() && m_freq.has_value()){
+      for (size_t i = 0; i < m_R.value().size(); ++i)
+      {
+        R = m_R.value().at(i) * 10; // converto to AA
+        freq = m_freq.value().at(i);
+        _2kr = 2 * k * R;
+        I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
+        SANS_xs += freq * std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
+      }
+      SANS_xs *= physical_constant;
+    } else if (m_mono_R.has_value()){
+        R = m_mono_R.value() * 10; // converto to AA
+        _2kr = 2 * k * R;
+        I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
+        SANS_xs = physical_constant*std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
     }
-    SANS_xs *= physical_constant;
   }
   else
   {
@@ -359,7 +376,7 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
 {
   NC::NeutronEnergy ekin(neutron_ekin);
   double Q;
-  if (m_model == "simple")
+  if (m_model == "simple" || m_model == "NP-FBA")
   {
     double rand = rng.generate();
     double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
