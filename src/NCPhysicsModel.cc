@@ -157,8 +157,10 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     }
     else if (model == "simple")
     {
-      // Parsing done! Create and return our model:
-      return PhysicsModel(model, p0, p1, p2, p3, p4);
+      if (NC::safe_str2dbl(data.at(2).at(0), p0)){
+        // Parsing done! Create and return our model:
+        return PhysicsModel(model, p0);
+      }
     }
     else
     {
@@ -235,10 +237,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
         std::for_each(it_q0,IofQ.end(),
                       [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
                       );    
-      } else if (m_model == "simple") {
-        //do nothing here
-      }
-        
+      } 
       //Initialize the helper           
       NC::IofQHelper helper(q,IofQ);
       return helper; })())
@@ -251,10 +250,10 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
   // model directly from your python test code).
 }
 
-NCP::PhysicsModel::PhysicsModel(std::string model, double mono_R)
+NCP::PhysicsModel::PhysicsModel(std::string model, double p)
     : m_model(model),
-      m_mono_R(mono_R)
-{
+      m_p(p)
+{     
 };
 
 NCP::PhysicsModel::PhysicsModel(std::string model, std::string filename)
@@ -329,7 +328,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   double SANS_xs;
   if (m_model == "simple")
   {
-    SANS_xs = 8.1 * 25.3e-3 / neutron_ekin;
+    if (m_p.has_value()) SANS_xs = m_p.value() * 25.3e-3 / neutron_ekin;
   }
   else if (m_model == "NP-FBA")
   {
@@ -350,8 +349,8 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
         SANS_xs += freq * std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
       }
       SANS_xs *= physical_constant;
-    } else if (m_mono_R.has_value()){
-        R = m_mono_R.value() * 10; // converto to AA
+    } else if (m_p.has_value()){
+        R = m_p.value() * 10; // converto to AA
         _2kr = 2 * k * R;
         I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
         SANS_xs = physical_constant*std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]

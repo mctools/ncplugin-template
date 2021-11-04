@@ -30,8 +30,8 @@ namespace NCPluginNamespace {
     PhysicsModel(std::string filename );
     //Constructor gets the models string and the param:
     PhysicsModel( std::string model, double p0, double p1, double p2, double p3, double p4 );
-    //Constructor gets the models string and the nanoparticle radius R :
-    PhysicsModel( std::string model, double mono_R);
+    //Constructor gets the models string (simple or FBA) and the normalization/nanoparticle radius R :
+    PhysicsModel( std::string model, double p);
     //Constructor gets the models string and the dist R file:
     PhysicsModel( std::string model, std::string filename );
 
@@ -51,7 +51,7 @@ namespace NCPluginNamespace {
     NC::Optional<NC::VectD> m_param;
     NC::Optional<NC::IofQHelper> m_helper;
     //for theoretical NP_FBA
-    NC::Optional<double> m_mono_R;
+    NC::Optional<double> m_p;
     NC::Optional<NC::VectD> m_R;
     NC::Optional<NC::VectD> m_freq;
   };
