@@ -33,7 +33,7 @@ p=2.13
 
 ersez_density = 0.5
 
-R=0.246
+R=2.4
 
 A_simple=8.34
 
@@ -144,8 +144,8 @@ customsection4='@CUSTOM_%s\n  %g\n %s'% ( "SANSND",
 
 customsection5='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
                                        version,
-                                        "NP-FBA",
-                                        5 )
+                                        "HS-FBA",
+                                        2.4 )
 customsection6='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
                                         version,
                                         "simple",
@@ -179,7 +179,7 @@ sc_plugin6 = NC.createScatter("customDiamond6.ncmat")
 #
 #wls = np.linspace(0.01,10.0,1000)
 plt.figure(num='Benchmark')
-energies = np.logspace(-8,0,100000)
+energies = np.logspace(-5,0,100000)
 xs =  sc_plugin.crossSectionNonOriented(energies)
 xs2 =  sc_plugin2.crossSectionNonOriented(energies)
 xs3 =  sc_plugin3.crossSectionNonOriented(energies)
@@ -191,14 +191,14 @@ print("\ncross section PPF @ 0.01 ", sc_plugin.crossSectionNonOriented(0.01))
 print("\ncross section GP @ 0.01 ", sc_plugin2.crossSectionNonOriented(0.01))
 print("\ncross section Teshi @ 0.01 ", sc_plugin3.crossSectionNonOriented(0.01))
 print("\ncross section Ersex @ 0.01 ", sc_plugin4.crossSectionNonOriented(0.01))
-print("\ncross section FBA @ 0.01 ", sc_plugin5.crossSectionNonOriented(0.01))
+print("\ncross section HS @ 0.01 ", sc_plugin5.crossSectionNonOriented(0.01))
 print("\ncross section Simple @ 0.01 ", sc_plugin6.crossSectionNonOriented(0.01))
 plt.plot(energies, xs_std, label="Standard NCrystal",linestyle='dashed',color="tab:red")
-plt.plot(energies, xs, label="PPF", color="tab:orange")
+#plt.plot(energies, xs, label="PPF", color="tab:orange")
 plt.plot(energies, xs2, label="GP", color="tab:green")
-plt.plot(energies, xs3, label="Teshi", color="tab:blue")
+#plt.plot(energies, xs3, label="Teshi", color="tab:blue")
 plt.plot(energies, xs4, label=f"Ersez density={ersez_density:.1f} g/cm3", color="tab:red")
-plt.plot(energies, xs5, label=f"FBA R={R:.2f} nm", color="tab:brown")
+plt.plot(energies, xs5, label=f"HS R={R:.2f} nm", color="tab:brown")
 plt.plot(energies, xs6, label=f"Simple A={A_simple:.2f}", color="tab:cyan")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
@@ -224,26 +224,27 @@ plt.scatter(vesuvio_data["E"][vesuvio_data["E"]<1],vesuvio_data["xs"][vesuvio_da
 plt.xlabel('Energy (eV)')
 plt.ylabel('Total Cross Section (barn)')
 plt.legend()
-plt.grid(which='both', linestyle=':')
+#plt.grid(which='both', linestyle=':')
 plt.loglog()
 
 ## RESIDUAL PLOT
 plt.figure(num='Residual')
 #plt.step( ekins,(sc_plugin.xsect(ekins) - sc_std.xsect(ekins))/sc_std.xsect(ekins), where='mid',lw=1,label='With SANS' )
 #plt.step( teshi_data["E"], (teshi_data["xs"]-sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])), where='mid',color='r',lw=1,label='Teshigawara et al.')
-plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='r', where='mid',label='simple' )
-plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='b', where='mid',label='GP' )
-plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='g', where='mid',label='Ersez' )
+plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:cyan', where='mid',label='simple' )
+plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:green', where='mid',label='GP' )
+plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:red', where='mid',label='Ersez' )
+plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:brown', where='mid',label='HS' )
 #plt.step( njoy_data["E"],(njoy_data["xs"] - sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])), where='mid',lw=1,color='b', label='Granada et al.' )
 
  
 plt.xlabel('Energy (eV)')
 plt.ylabel('')
-
-plt.title('Residual Total Cross Section relative to NCrystal+SANS')
+plt.title('Residual Total Cross Section relative to Vesuvio Exp')
 plt.legend()
 plt.grid(which='both', linestyle=':')
 plt.xscale('log')
+plt.gca().set_xlim(right=1)
 
 
 plt.show()

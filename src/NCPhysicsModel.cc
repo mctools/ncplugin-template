@@ -130,11 +130,14 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
         return PhysicsModel(model, p0, p1, p2, p3, p4);
       }
     }
-    else if (model == "NP-FBA")
+    else if (model == "HS-FBA")
     {
-      if (NC::safe_str2dbl(data.at(2).at(0), p0)){
-        return PhysicsModel(model , p0 );
-      } else {
+      if (NC::safe_str2dbl(data.at(2).at(0), p0))
+      {
+        return PhysicsModel(model, p0);
+      }
+      else
+      {
         std::string filename = data.at(2).at(0);
         std::string root_rel = "data/";
         std::string rel_path = root_rel + filename;
@@ -151,13 +154,14 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
           // CHECK THE INPUT PARAM
           // nc_assert(R>0);
           // param.insert(param.end(), {R});}
-          return PhysicsModel(model , filename );
-        }    
-      }  
+          return PhysicsModel(model, filename);
+        }
+      }
     }
     else if (model == "simple")
     {
-      if (NC::safe_str2dbl(data.at(2).at(0), p0)){
+      if (NC::safe_str2dbl(data.at(2).at(0), p0))
+      {
         // Parsing done! Create and return our model:
         return PhysicsModel(model, p0);
       }
@@ -180,6 +184,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
       NC::VectD q = NC::logspace(-6,1,100000);
       NC::VectD IofQ = q;
       if (m_model == "GP") {
+        
         double A=m_param.value().at(0);
         double s=m_param.value().at(1);
         double rg=m_param.value().at(2);
@@ -219,6 +224,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
         std::for_each(it_q2,IofQ.end(),
                       [B,m](double &x) { x = B*std::pow(x,-m);}
                       );
+        std::cout<< "GP: I was executed" << std::endl;
       } else if (m_model == "PPF") {
         double A1=m_param.value().at(0);
         double b1=m_param.value().at(1);
@@ -238,8 +244,10 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
                       [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
                       );    
       } 
-      //Initialize the helper           
+      //Initialize the helper     
+      std::cout << q.at(0) << " " << IofQ.at(0) << std::endl;   
       NC::IofQHelper helper(q,IofQ);
+      std::cout << "Helper initialized" << std::endl; 
       return helper; })())
 {
   // Important note to developers who are using the infrastructure in the
@@ -252,9 +260,7 @@ NCP::PhysicsModel::PhysicsModel(std::string model, double p0, double p1, double 
 
 NCP::PhysicsModel::PhysicsModel(std::string model, double p)
     : m_model(model),
-      m_p(p)
-{     
-};
+      m_p(p){};
 
 NCP::PhysicsModel::PhysicsModel(std::string model, std::string filename)
     : m_model(model),
@@ -316,8 +322,7 @@ NCP::PhysicsModel::PhysicsModel(std::string filename)
         std::cout<<i<<std::endl;;
       }*/ 
       NC::IofQHelper helper(q,IofQ);
-      return helper; })())
-      {
+      return helper; })()){
 
       };
 
@@ -328,32 +333,41 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   double SANS_xs;
   if (m_model == "simple")
   {
-    if (m_p.has_value()) SANS_xs = m_p.value() * 25.3e-3 / neutron_ekin;
+    if (m_p.has_value())
+      SANS_xs = m_p.value() * 25.3e-3 / neutron_ekin;
   }
-  else if (m_model == "NP-FBA")
+  else if (m_model == "HS-FBA")
   {
-    // h_bar = 1.054571817e-34 ;//[J*s] <- Reduced planck constant
-    // m = 1.674927498e-27;// [Kg] <- neutron mass
-    // V = 290.0e-9*1.60218e-19;// [J]
-    // 2*pi*(2mV/h_bar^2)^2 =   1.2307e+33 [1/m^4]
-    double physical_constant = 1.2307e+33;
+    // b = 6.646E-05;//[AA] <- Carbon coherent scattering length
+    // n = 0.1771471666666667;// [at/AA^3] <- Diamond atom density
+    // 32*pi^3*(nb)^2 = 1.375E-07 [1/AA^4]
+    double physical_constant = 1.375E-07;
     SANS_xs = 0;
     double R, freq, _2kr, I;
-    if (m_R.has_value() && m_freq.has_value()){
+    if (m_R.has_value() && m_freq.has_value())
+    {
       for (size_t i = 0; i < m_R.value().size(); ++i)
       {
         R = m_R.value().at(i) * 10; // converto to AA
         freq = m_freq.value().at(i);
         _2kr = 2 * k * R;
         I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
-        SANS_xs += freq * std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
+        // Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
+        //  Nc = V * n = 4/3*pi*R^3 * n
+        double Nc = 0.7420 * R * R * R;
+        SANS_xs += freq * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
       }
       SANS_xs *= physical_constant;
-    } else if (m_p.has_value()){
-        R = m_p.value() * 10; // converto to AA
-        _2kr = 2 * k * R;
-        I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
-        SANS_xs = physical_constant*std::pow(R * 1e-10, 6) / (k * k * R * R) * I * 1e+28; //[barn]
+    }
+    else if (m_p.has_value())
+    {
+      R = m_p.value() * 10; // converto to AA
+      _2kr = 2 * k * R;
+      I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
+      // Determine the number of atoms in a diamond nanoparticle to normalize per-atoms
+      //  Nc = V * n = 4/3*pi*R^3 * n
+      double Nc = 0.7420 * R * R * R;
+      SANS_xs = physical_constant * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
     }
   }
   else
@@ -364,8 +378,8 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
     }
     else
     {
-      NCRYSTAL_THROW2(BadInput, "Attempt to use IofQHelper when not defined in the " << pluginNameUpperCase()
-                                                                                     << " plugin");
+      NCRYSTAL_THROW2(BadInput, "Attempt to use IofQHelper in xs2 sampling when not defined in the " << pluginNameUpperCase()
+                                                                                                     << " plugin");
     }
   }
   return SANS_xs;
@@ -375,7 +389,7 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
 {
   NC::NeutronEnergy ekin(neutron_ekin);
   double Q;
-  if (m_model == "simple" || m_model == "NP-FBA")
+  if (m_model == "simple" || m_model == "HS-FBA")
   {
     double rand = rng.generate();
     double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
@@ -402,8 +416,8 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
   }
   else
   {
-    NCRYSTAL_THROW2(BadInput, "Attempt to use IofQHelper when not defined in the " << pluginNameUpperCase()
-                                                                                   << " plugin");
+    NCRYSTAL_THROW2(BadInput, "Attempt to use IofQHelper in Q sampling when not defined in the " << pluginNameUpperCase()
+                                                                                                 << " plugin");
   }
   return Q;
 }
