@@ -171,6 +171,10 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
       NCRYSTAL_THROW2(BadInput, "Invalid model specified in the @CUSTOM_" << pluginNameUpperCase()
                                                                           << " section (see the plugin readme for more info)");
     }
+
+    NCRYSTAL_THROW2(BadInput, "Invalid model specified in the @CUSTOM_" << pluginNameUpperCase()
+                                                                          << " section (see the plugin readme for more info)");
+                                                                          
   }
 }
 
