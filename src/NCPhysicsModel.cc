@@ -312,7 +312,8 @@ NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
 
 double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 {
-  //std::cout<<"call to calcCrossSection"<<std::endl;
+  std::cout<<"call to calcCrossSection"<<std::endl;
+  std::cout<<"m_model: " << m_model <<std::endl;
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
   nc_assert(k!=0);
@@ -392,7 +393,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 
 double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ekin) const
 {
-  //std::cout<<"call to sampleScatteringVector"<<std::endl;
+  std::cout<<"call to sampleScatteringVector"<<std::endl;
   NC::NeutronEnergy ekin(neutron_ekin);
   double Q;
   enum model_def
@@ -402,7 +403,7 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     GPF,
     HSFBA
   };
-  //std::cout<<"m_model: " << m_model <<std::endl;
+  std::cout<<"m_model: " << m_model <<std::endl;
   switch (m_model)
   {
   case FILE:

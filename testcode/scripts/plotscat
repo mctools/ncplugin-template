@@ -16,7 +16,7 @@ nsample = int(1e7)#Warning consumes nsample*8 bytes of memory, so don't be silly
                   #code below as loop which samples e.g. 1e6 at a time).
 
 nbins = 200
-wl = 0
+wl = 1.98
 muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
 print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
 plt.hist(muvals, bins=nbins,alpha=0.5, label=f'teshi_xs',range=(0.8,1),color="k", fill=False,histtype="step")
