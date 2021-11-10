@@ -90,6 +90,6 @@ NCMAT v3
 @CUSTOM_SANSND
 # custom physics that enables SANS for nanodiamond particles
   2.0                                   # plugin version
-  PPF
-  132.869 -1.33605 0.0519763 -3.97314 0.0510821                        
+  1
+  132.869 1.33605 0.0519763 3.97314 0.0510821                        
 

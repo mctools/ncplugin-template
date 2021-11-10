@@ -124,32 +124,34 @@ dummyal="""NCMAT v5
     .265855 .300494 .41769 .385856 .222808 .130473 .0823366 .0292034 .0125285 0
 """
 
-customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+customsection='@CUSTOM_%s\n  %g\n %d\n %g %g %g %g %g'% ( "SANSND", 
                                         version,
-                                        "PPF",
+                                        1,
                                         A1,b1,A2,b2,Q0 )
 
-customsection2='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+customsection2='@CUSTOM_%s\n  %g\n %d\n %g %g %g %g %g'% ( "SANSND", 
                                         version,
-                                        "GP",
+                                        2,
                                         A,s,rg,m,p)
 
-customsection3='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
+customsection3='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
-                                        "teshi_xs")
+                                       0,
+                                      "teshi_xs")
 
-customsection4='@CUSTOM_%s\n  %g\n %s'% ( "SANSND", 
+customsection4='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
+                                       0,
                                         "Ersez_data_corr")
 
-customsection5='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
+customsection5='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
-                                        "HS-FBA",
+                                        3,
                                         2.4 )
-customsection6='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
-                                        version,
-                                        "simple",
-                                        A_simple )
+#customsection6='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
+#                                        version,
+#                                        "simple",
+#                                        A_simple )
                       
 
 NC.registerInMemoryFileData('stdDiamond.ncmat', dummyal)
@@ -158,7 +160,7 @@ NC.registerInMemoryFileData('customDiamond2.ncmat', dummyal+customsection2)
 NC.registerInMemoryFileData('customDiamond3.ncmat', dummyal+customsection3)
 NC.registerInMemoryFileData('customDiamond4.ncmat', dummyal+customsection4)
 NC.registerInMemoryFileData('customDiamond5.ncmat', dummyal+customsection5)
-NC.registerInMemoryFileData('customDiamond6.ncmat', dummyal+customsection6)
+#NC.registerInMemoryFileData('customDiamond6.ncmat', dummyal+customsection6)
 
 ######################################################################
 #
@@ -172,7 +174,7 @@ sc_plugin2 = NC.createScatter("customDiamond2.ncmat")
 sc_plugin3 = NC.createScatter("customDiamond3.ncmat")
 sc_plugin4 = NC.createScatter("customDiamond4.ncmat")
 sc_plugin5 = NC.createScatter("customDiamond5.ncmat")
-sc_plugin6 = NC.createScatter("customDiamond6.ncmat")
+##sc_plugin6 = NC.createScatter("customDiamond6.ncmat")
 ######################################################################
 #
 # Plot with matplotlib:
@@ -185,21 +187,21 @@ xs2 =  sc_plugin2.crossSectionNonOriented(energies)
 xs3 =  sc_plugin3.crossSectionNonOriented(energies)
 xs4 =  sc_plugin4.crossSectionNonOriented(energies)
 xs5 =  sc_plugin5.crossSectionNonOriented(energies)
-xs6 =  sc_plugin6.crossSectionNonOriented(energies)
+#xs6 =  sc_plugin6.crossSectionNonOriented(energies)
 xs_std = sc_std.crossSectionNonOriented(energies)
 print("\ncross section PPF @ 0.01 ", sc_plugin.crossSectionNonOriented(0.01))
 print("\ncross section GP @ 0.01 ", sc_plugin2.crossSectionNonOriented(0.01))
 print("\ncross section Teshi @ 0.01 ", sc_plugin3.crossSectionNonOriented(0.01))
 print("\ncross section Ersex @ 0.01 ", sc_plugin4.crossSectionNonOriented(0.01))
 print("\ncross section HS @ 0.01 ", sc_plugin5.crossSectionNonOriented(0.01))
-print("\ncross section Simple @ 0.01 ", sc_plugin6.crossSectionNonOriented(0.01))
+#print("\ncross section Simple @ 0.01 ", sc_plugin6.crossSectionNonOriented(0.01))
 plt.plot(energies, xs_std, label="Standard NCrystal",linestyle='dashed',color="tab:red")
 #plt.plot(energies, xs, label="PPF", color="tab:orange")
 plt.plot(energies, xs2, label="GP", color="tab:green")
 #plt.plot(energies, xs3, label="Teshi", color="tab:blue")
 plt.plot(energies, xs4, label=f"Ersez density={ersez_density:.1f} g/cm3", color="tab:red")
 plt.plot(energies, xs5, label=f"HS R={R:.2f} nm", color="tab:brown")
-plt.plot(energies, xs6, label=f"Simple A={A_simple:.2f}", color="tab:cyan")
+#plt.plot(energies, xs6, label=f"Simple A={A_simple:.2f}", color="tab:cyan")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
 
@@ -231,7 +233,7 @@ plt.loglog()
 plt.figure(num='Residual')
 #plt.step( ekins,(sc_plugin.xsect(ekins) - sc_std.xsect(ekins))/sc_std.xsect(ekins), where='mid',lw=1,label='With SANS' )
 #plt.step( teshi_data["E"], (teshi_data["xs"]-sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(teshi_data["E"])), where='mid',color='r',lw=1,label='Teshigawara et al.')
-plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:cyan', where='mid',label='simple' )
+#plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin6.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:cyan', where='mid',label='simple' )
 plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin2.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:green', where='mid',label='GP' )
 plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:red', where='mid',label='Ersez' )
 plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:brown', where='mid',label='HS' )

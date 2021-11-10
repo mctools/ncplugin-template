@@ -55,3 +55,4 @@ testcode/data/Ersez_dataset:Zone.Identifier
 testcode/data/*:Zone.Identifier
 testcode/data/muvals
 testcode/data/muvals_files
+compile_plugin.sh

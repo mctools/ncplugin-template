@@ -29,11 +29,11 @@ namespace NCPluginNamespace {
     //Constructor gets the filename of the input data file:
     PhysicsModel(std::string filename );
     //Constructor gets the models string and the param:
-    PhysicsModel( std::string model, double p0, double p1, double p2, double p3, double p4 );
-    //Constructor gets the models string (simple or FBA) and the normalization/nanoparticle radius R :
-    PhysicsModel( std::string model, double p);
+    PhysicsModel( int model, double p0, double p1, double p2, double p3, double p4 );
+    //Constructor gets the models string and nanoparticle radius R :
+    PhysicsModel( int model, double mono_R);
     //Constructor gets the models string and the dist R file:
-    PhysicsModel( std::string model, std::string filename );
+    PhysicsModel( int model, std::string filename );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -47,11 +47,11 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    std::string m_model;
+    int m_model;
     NC::Optional<NC::VectD> m_param;
     NC::Optional<NC::IofQHelper> m_helper;
     //for theoretical NP_FBA
-    NC::Optional<double> m_p;
+    NC::Optional<double> m_mono_R;
     NC::Optional<NC::VectD> m_R;
     NC::Optional<NC::VectD> m_freq;
   };

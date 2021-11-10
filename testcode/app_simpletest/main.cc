@@ -7,7 +7,7 @@ int main()
   //Very simple test which instantiates our model and calculates a few cross
   //sections and samples a few scattering events:
   //NC::VectD param{132.869, -1.33605, 0.0519763, -3.97314, 0.0510821, 5.551};
-  auto pm = NCP::PhysicsModel("PPF", 132.869, -1.33605, 0.0519763, -3.97314, 0.0510821);
+  auto pm = NCP::PhysicsModel(1, 132.869, -1.33605, 0.0519763, -3.97314, 0.0510821);
   //auto pm = NCP::PhysicsModel("teshi_xs");
 
   for ( auto en :  NC::logspace(-4,1,50) ) {
