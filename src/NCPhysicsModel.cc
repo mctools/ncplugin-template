@@ -187,25 +187,26 @@ NCP::PhysicsModel::PhysicsModel(std::string filename)
       }
       NC::IofQHelper helper(q,IofQ);
       return helper; })()){
-        //std::cout<<"call to constructor for 0"<<std::endl;
+        std::cout<<"call to constructor for 0"<<std::endl;
+        std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
       };
 
 NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, double p3, double p4)
     : m_model(model),
       m_param({p0, p1, p2, p3, p4}),
-      m_helper(([this]() -> NC::IofQHelper
+      m_helper(([model, p0, p1, p2, p3, p4]() -> NC::IofQHelper
                 { 
       
       //Generate vector of data q and IofQ
       NC::VectD q = NC::logspace(-6,1,100000);
       NC::VectD IofQ = q;
-      if (m_model == 2) { //GPF
+      if (model == 2) { //GPF
 
-        double A=m_param.value().at(0);
-        double s=m_param.value().at(1);
-        double rg=m_param.value().at(2);
-        double m=m_param.value().at(3);
-        double p=m_param.value().at(4);
+        double A=p0;
+        double s=p1;
+        double rg=p2;
+        double m=p3;
+        double p=p4;
         //Q1 is when IofQ stops being evaluated as power law and Guinier starts (maybe parameter?)
         double Q1=0.016;
         auto it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
@@ -241,12 +242,12 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         std::for_each(it_q2,IofQ.end(),
                       [B,m](double &x) { x = B*std::pow(x,-m);}
                       );
-      } else if (m_model == 1) {
-        double A1=m_param.value().at(0);
-        double b1=m_param.value().at(1);
-        double A2=m_param.value().at(2);
-        double b2=m_param.value().at(3);
-        double Q0=m_param.value().at(4);
+      } else if (model == 1) {
+        double A1=p0;
+        double b1=p1;
+        double A2=p2;
+        double b2=p3;
+        double Q0=p4;
 
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
         if (it_q0==IofQ.end()) 
@@ -265,14 +266,15 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
       //Initialize the helper        
       NC::IofQHelper helper(q,IofQ);
       return helper; })()){
-        //std::cout<<"call to constructor for 1 and 2"<<std::endl;
+        std::cout<<"call to constructor for 1 and 2"<<std::endl;
+        std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
       };
 
 NCP::PhysicsModel::PhysicsModel(int model, double mono_R)
     : m_model(model),
       m_mono_R(mono_R)
 {
-  //std::cout<<"call to constructor for 3"<<std::endl;
+  std::cout<<"call to constructor for 3"<<std::endl;
   nc_assert(model == 3);
 };
 
@@ -281,7 +283,7 @@ NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
       m_R(),
       m_freq()
 {
-  //std::cout<<"call to constructor for 3 + filename"<<std::endl;
+  std::cout<<"call to constructor for 3 + filename"<<std::endl;
   nc_assert(model == 3);
   // read R distribution information
   NC::VectD R;
@@ -314,8 +316,10 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 {
   std::cout<<"call to calcCrossSection"<<std::endl;
   std::cout<<"m_model: " << m_model <<std::endl;
+  
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
+  std::cout<<"k: " << k <<std::endl;
   nc_assert(k!=0);
   double SANS_xs;
   enum model_def

@@ -1,0 +1,7 @@
+==10202== Memcheck, a memory error detector
+==10202== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==10202== Using Valgrind-3.15.0 and LibVEX; rerun with -h for copyright info
+==10202== Command: /home/nicorizzi/ncrystal_install/bin/ncrystal_inspectfile ncplugin-SANSND_nanodiamond.ncmat
+==10202== Parent PID: 249
+==10202== 
+==10202== error calling PR_SET_PTRACER, vgdb might block
