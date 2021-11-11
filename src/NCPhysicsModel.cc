@@ -222,7 +222,6 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         std::for_each(IofQ.begin(),it_q1,
                       [C,p](double &x) { x = C*std::pow(x,-p);}
                       ); 
-        std::advance(it_q1,1);
         //evaluate Q2 where IofQ stops being evaluated as Guinier and Porod starts
         double Q2 = 1.0/rg*std::sqrt((m-s)*(3-s)/2);
         //IofQ still filled with q here
@@ -238,7 +237,6 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         std::for_each(it_q1,it_q2,
                       [A,s,rg](double &x) { x = A*std::pow(x,-s)*std::exp((-x*x*rg*rg)/(3-s));}
                       ); 
-        std::advance(it_q2,1);
         std::for_each(it_q2,IofQ.end(),
                       [B,m](double &x) { x = B*std::pow(x,-m);}
                       );
@@ -256,7 +254,6 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         std::for_each(IofQ.begin(),it_q0,
                       [A1,b1](double &x) { x = A1*std::pow(x,-b1);}
                       ); 
-        std::advance(it_q0,1);
         std::for_each(it_q0,IofQ.end(),
                       [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
                       );    

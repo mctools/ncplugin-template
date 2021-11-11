@@ -18,7 +18,7 @@ namespace NCPluginNamespace {
 
   class PhysicsModel final : public NC::MoveOnly {
   public:
-
+    
     //A few static helper functions which can extract relevant data from NCInfo
     //objects (the createFromInfo function will raise BadInput exceptions in
     //case of syntax errors in the @CUSTOM_ section data):
