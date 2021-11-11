@@ -187,8 +187,8 @@ NCP::PhysicsModel::PhysicsModel(std::string filename)
       }
       NC::IofQHelper helper(q,IofQ);
       return helper; })()){
-        std::cout<<"call to constructor for 0"<<std::endl;
-        std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
+        //std::cout<<"call to constructor for 0"<<std::endl;
+        //std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
       };
 
 NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, double p3, double p4)
@@ -263,15 +263,15 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
       //Initialize the helper        
       NC::IofQHelper helper(q,IofQ);
       return helper; })()){
-        std::cout<<"call to constructor for 1 and 2"<<std::endl;
-        std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
+        //::cout<<"call to constructor for 1 and 2"<<std::endl;
+        //std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
       };
 
 NCP::PhysicsModel::PhysicsModel(int model, double mono_R)
     : m_model(model),
       m_mono_R(mono_R)
 {
-  std::cout<<"call to constructor for 3"<<std::endl;
+  //std::cout<<"call to constructor for 3"<<std::endl;
   nc_assert(model == 3);
 };
 
@@ -280,7 +280,7 @@ NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
       m_R(),
       m_freq()
 {
-  std::cout<<"call to constructor for 3 + filename"<<std::endl;
+  //std::cout<<"call to constructor for 3 + filename"<<std::endl;
   nc_assert(model == 3);
   // read R distribution information
   NC::VectD R;
@@ -311,8 +311,8 @@ NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
 
 double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 {
-  std::cout<<"call to calcCrossSection"<<std::endl;
-  std::cout<<"m_model: " << m_model <<std::endl;
+  //std::cout<<"call to calcCrossSection"<<std::endl;
+  //std::cout<<"m_model: " << m_model <<std::endl;
   
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
