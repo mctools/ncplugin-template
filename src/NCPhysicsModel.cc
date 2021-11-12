@@ -198,7 +198,7 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
                 { 
       
       //Generate vector of data q and IofQ
-      NC::VectD q = NC::logspace(-6,1,100000);
+      NC::VectD q = NC::logspace(-6,1,1000000);
       NC::VectD IofQ = q;
       if (model == 2) { //GPF
 
@@ -316,7 +316,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
-  std::cout<<"k: " << k <<std::endl;
+  //std::cout<<"k: " << k <<std::endl;
   nc_assert(k!=0);
   double SANS_xs;
   enum model_def
@@ -328,8 +328,22 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   };
   switch (m_model)
   {
-  case FILE:
   case PPF:
+  {
+    if (m_param.has_value()){
+      double A1=m_param.value().at(0);
+      double b1=m_param.value().at(1);
+      double A2=m_param.value().at(2);
+      double b2=m_param.value().at(3);
+      double Q0=m_param.value().at(4);
+      SANS_xs = (1/(2*k*k))*(A1/(-b1+2)*std::pow(Q0,-b1+2) + A2/(-b2+2)*std::pow(2*k,-b2+2) - A2/(-b2+2)*std::pow(Q0,-b2+2));
+    } else {
+      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
+                                                                                                     << " plugin");
+    }
+    break;
+  }
+  case FILE:
   case GPF:
   {
     if (m_helper.has_value())
@@ -394,8 +408,7 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 
 double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ekin) const
 {
-  std::cout<<"call to sampleScatteringVector"<<std::endl;
-  NC::NeutronEnergy ekin(neutron_ekin);
+  //std::cout<<"call to sampleScatteringVector"<<std::endl;
   double Q;
   enum model_def
   {
@@ -404,10 +417,10 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     GPF,
     HSFBA
   };
-  std::cout<<"m_model: " << m_model <<std::endl;
+  //std::cout<<"m_model: " << m_model <<std::endl;
   switch (m_model)
   {
-  case FILE:
+  case PPF:
   case HSFBA:
   {
     double rand = rng.generate();
@@ -431,11 +444,11 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     }
     break;
   }
-  case PPF:
   case GPF:
   {
     if (m_helper.has_value())
     {
+      NC::NeutronEnergy ekin(neutron_ekin);
       Q = m_helper.value().sampleQValue(rng, ekin);
     }
     else

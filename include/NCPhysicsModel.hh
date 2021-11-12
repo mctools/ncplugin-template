@@ -18,7 +18,8 @@ namespace NCPluginNamespace {
 
   class PhysicsModel final : public NC::MoveOnly {
   public:
-    
+    //after debugging
+    //enum class model_def : unsigned { FILE=0, PPF=1, GPF=2, HSFBA=3 };
     //A few static helper functions which can extract relevant data from NCInfo
     //objects (the createFromInfo function will raise BadInput exceptions in
     //case of syntax errors in the @CUSTOM_ section data):
