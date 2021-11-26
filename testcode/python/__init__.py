@@ -18,9 +18,9 @@ class PhysicsModel:
     #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
     #    self.__modelparams=filename
 
-    #def __init__(self,model,mono_R):
-    #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
-    #    self.__modelparams=(model,mono_R)
+    def __init__(self,model,mono_R):
+        """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
+        self.__modelparams=(model,mono_R)
     
     #def __init__(self,model,filename):
     #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
