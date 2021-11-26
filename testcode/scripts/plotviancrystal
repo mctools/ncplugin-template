@@ -11,27 +11,40 @@ import ncplugin#<--- our own module developed here
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 ncplugin.registerPlugin()#<---register our plugin with NCrystal
+plt.rc('font', family='serif')
 #
 ######################################################################
 #
 # For the test here we register two custom data files with NCrystal,
 # the content is identical apart from the @CUSTOM_... section
 #
-
+#Teshi
 A1=132.869
 b1=1.33605
 A2=0.0519763
 b2=3.97314
 Q0=0.0510821
-
+#Grammer
+#A1 = 45
+#b1 = 1.4
+#b2 = 3.8
+#Q0 = 0.05
+#A2 = 0.0339
+#teshi
 A=66
 s=1.5
 rg=14.64
 m=4.15
 p=2.13
-
-ersez_density = 0.5
+#Grammer
+#A=25.08266886  
+#s=1.54414891 
+#rg=12.44823585  
+#m=4.22294979
+#p=2.25
 
 R=2.4
 
@@ -137,17 +150,17 @@ customsection2='@CUSTOM_%s\n  %g\n %d\n %g %g %g %g %g'% ( "SANSND",
 customsection3='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
                                        0,
-                                      "teshi_xs")
+                                      "teshi.dat")
 
 customsection4='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
-                                       0,
-                                        "Ersez_data_corr")
+                                       3,
+                                        "teshi_R_dist")
 
 customsection5='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
                                        version,
                                         3,
-                                        2.4 )
+                                        2.5 )
 #customsection6='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
 #                                        version,
 #                                        "simple",
@@ -180,7 +193,9 @@ sc_plugin5 = NC.createScatter("customDiamond5.ncmat")
 # Plot with matplotlib:
 #
 #wls = np.linspace(0.01,10.0,1000)
-plt.figure(num='Benchmark')
+fig, ax = plt.subplots(1,1, figsize=(7, 5), dpi=300)
+
+#plt.rcParams["font.family"] = "cursive"
 energies = np.logspace(-5,0,100000)
 xs =  sc_plugin.crossSectionNonOriented(energies)
 xs2 =  sc_plugin2.crossSectionNonOriented(energies)
@@ -189,18 +204,18 @@ xs4 =  sc_plugin4.crossSectionNonOriented(energies)
 xs5 =  sc_plugin5.crossSectionNonOriented(energies)
 #xs6 =  sc_plugin6.crossSectionNonOriented(energies)
 xs_std = sc_std.crossSectionNonOriented(energies)
-print("\ncross section PPF @ 0.01 ", sc_plugin.crossSectionNonOriented(0.01))
-print("\ncross section GP @ 0.01 ", sc_plugin2.crossSectionNonOriented(0.01))
-print("\ncross section Teshi @ 0.01 ", sc_plugin3.crossSectionNonOriented(0.01))
-print("\ncross section Ersex @ 0.01 ", sc_plugin4.crossSectionNonOriented(0.01))
-print("\ncross section HS @ 0.01 ", sc_plugin5.crossSectionNonOriented(0.01))
+print("\ncross section PPF @ 0.001 ", sc_plugin.crossSectionNonOriented(0.001))
+print("\ncross section GP @ 0.001 ", sc_plugin2.crossSectionNonOriented(0.001))
+print("\ncross section Teshi @ 0.001 ", sc_plugin3.crossSectionNonOriented(0.001))
+print("\ncross section Grammer @ 0.001 ", sc_plugin4.crossSectionNonOriented(0.001))
+print("\ncross section HS @ 0.001 ", sc_plugin5.crossSectionNonOriented(0.001))
 #print("\ncross section Simple @ 0.01 ", sc_plugin6.crossSectionNonOriented(0.01))
-plt.plot(energies, xs_std, label="Standard NCrystal",linestyle='dashed',color="tab:red")
-plt.plot(energies, xs, label="PPF", color="tab:orange")
-plt.plot(energies, xs2, label="GP", color="tab:green")
-plt.plot(energies, xs3, label="Teshi", color="tab:blue")
-plt.plot(energies, xs4, label=f"Ersez density={ersez_density:.1f} g/cm3", color="tab:red")
-plt.plot(energies, xs5, label=f"HS R={R:.2f} nm", color="tab:brown")
+plt.plot(energies, xs_std, label="Standard Diamond NCrystal",linestyle='dashed',color="tab:green",linewidth=1)
+plt.plot(energies, xs, label="SANS Piecewise Power-law", linestyle=(0,(5,1)), color="tab:cyan",linewidth=1)
+plt.plot(energies, xs2, label="Guinier-Porod + Power law",color="tab:purple",linewidth=1)
+plt.plot(energies, xs3, label="file (Teshigwara et al. [2019])", color="tab:blue",linewidth=1)
+plt.plot(energies, xs5, label=f"HSFBA R={R:.2f} nm", color="tab:brown",linewidth=1)
+plt.plot(energies, xs4, label=f"HSFBA Teshi. R distrib.", color="tab:red",linewidth=1)
 #plt.plot(energies, xs6, label=f"Simple A={A_simple:.2f}", color="tab:cyan")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
@@ -216,19 +231,49 @@ plt.plot(energies, xs5, label=f"HS R={R:.2f} nm", color="tab:brown")
 #         ls=':',lw=1, color='dimgray',label='Only SANS')
 
 ######################################################################
-teshi_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/teshi.dat", sep=" ")
+teshi_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/teshi_xs.dat", sep=" ")
 vesuvio_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/vesuvio.dat", sep=" ")
+vesuvio_data_masked = vesuvio_data[vesuvio_data["E"]<1]
+list_i_even = [i for i in range(0,len(vesuvio_data_masked["E"])) if i%5==0]
 #njoy_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/njoy_calc.txt", sep=" ")
-plt.scatter(teshi_data["E"],teshi_data["xs"], s=15, facecolors='none', edgecolors='tab:olive', label='Teshigawara at al. [2019]')
-plt.scatter(vesuvio_data["E"][vesuvio_data["E"]<1],vesuvio_data["xs"][vesuvio_data["E"]<1],s=15, facecolors='none', edgecolors='tab:purple',label='VESUVIO exp. [2019]')
+plt.scatter(teshi_data["E"],teshi_data["xs"], s=12, facecolors='none', edgecolors='tab:blue', linewidth=0.5,label='Teshigawara at al. [2019]')
+plt.scatter(vesuvio_data_masked["E"].iloc[list_i_even] ,vesuvio_data_masked["xs"].iloc[list_i_even],s=12, marker="s",linewidth=0.5, facecolors='none', edgecolors='tab:red',label='VESUVIO exp. [2019]')
 #plt.scatter(njoy_data["E"],njoy_data["xs"],s=15, facecolors='none', edgecolors='b',label='Granada et al. [2020]')
 
 plt.xlabel('Energy (eV)')
 plt.ylabel('Total Cross Section (barn)')
-plt.legend()
+plt.legend(fontsize=9)
+leg = ax.legend()
+leg.get_frame().set_edgecolor('k')
+leg.get_frame().set_linewidth(1)
 #plt.grid(which='both', linestyle=':')
 plt.loglog()
+plt.tight_layout()
+axins = zoomed_inset_axes(ax, zoom=5, loc="lower left")
+axins.scatter(teshi_data["E"],teshi_data["xs"], s=12, facecolors='none', edgecolors='tab:blue', linewidth=0.5,label='Teshigawara at al. [2019]')
+axins.scatter(vesuvio_data_masked["E"].iloc[list_i_even] ,vesuvio_data_masked["xs"].iloc[list_i_even],s=12, marker="s",linewidth=0.5, facecolors='none', edgecolors='tab:red',label='VESUVIO exp. [2019]')
+axins.plot(energies, xs_std, linestyle='dashed',color="tab:green",linewidth=1)
+axins.plot(energies, xs, linestyle=(0,(5,1)), color="tab:cyan",linewidth=1)
+axins.plot(energies, xs2, color="tab:purple",linewidth=1)
+axins.plot(energies, xs3, color="tab:blue",linewidth=1)
+axins.plot(energies, xs5, color="tab:brown",linewidth=1)
+axins.plot(energies, xs4, color="tab:red",linewidth=1)
+axins.set_xscale("log")
+axins.set_yscale("log")
+# sub region of the original image
+x1, x2, y1, y2 = 1e-3, 2e-3, 1e2, 5e2
+axins.set_xlim(x1, x2)
+axins.set_ylim(y1, y2)
+# fix the number of ticks on the inset axes
+#axins.yaxis.get_major_locator().set_params(nbins=7)
+#axins.xaxis.get_major_locator().set_params(nbins=7)
+axins.tick_params(axis="both", which="both",left=False, right=False, bottom=False, labelleft=False, labelbottom=False)
 
+# draw a bbox of the region of the inset axes in the parent axes and
+# connecting lines between the bbox and the inset axes area
+mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="k",lw=0.5,zorder=999)
+plt.savefig("data/xs_benchmark_all.png",dpi=200)
+plt.savefig("data/xs_benchmark_all.eps",dpi=200)
 ## RESIDUAL PLOT
 plt.figure(num='Residual')
 #plt.step( ekins,(sc_plugin.xsect(ekins) - sc_std.xsect(ekins))/sc_std.xsect(ekins), where='mid',lw=1,label='With SANS' )
@@ -238,9 +283,8 @@ plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin2.xsect(wl=NC.ekin2w
 plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin4.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:red', where='mid',label='Ersez' )
 plt.step( vesuvio_data["E"], (vesuvio_data["xs"] - sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])))/sc_plugin5.xsect(wl=NC.ekin2wl(vesuvio_data["E"])), lw=1, color='tab:brown', where='mid',label='HS' )
 #plt.step( njoy_data["E"],(njoy_data["xs"] - sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])))/sc_plugin.xsect(wl=NC.ekin2wl(njoy_data["E"])), where='mid',lw=1,color='b', label='Granada et al.' )
-
  
-plt.xlabel('Energy (eV)')
+plt.xlabel('Energy (eV)')  
 plt.ylabel('')
 plt.title('Residual Total Cross Section relative to Vesuvio Exp')
 plt.legend()

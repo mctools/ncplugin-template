@@ -68,6 +68,10 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   {
   case FILE:
   {
+    if(data.at(2).empty())
+      NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
+                                                                  << " plugin is invalid or the file could not be found in the data/ directory. ");
+
     std::string filename = data.at(2).at(0);
     std::string root_rel = "data/";
     std::string rel_path = root_rel + filename;
@@ -77,8 +81,18 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     if (!(stat(rel_path.c_str(), &buffer) == 0))
       NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
                                                                   << " plugin is invalid or the file could not be found in the data/ directory. ");
-    // Checks done! Create and return our model:
-    return PhysicsModel(filename);
+    if(data.at(2).size()==1){                                                         
+      return PhysicsModel(filename);
+    } else if (data.at(2).size()==2){
+      double norm;
+      if (!NC::safe_str2dbl(data.at(2).at(1), norm))
+      NCRYSTAL_THROW2(BadInput, "Invalid normalization factor given in the @CUSTOM_" << pluginNameUpperCase()
+                                                                      << " section (see the plugin readme for more info).");
+      return PhysicsModel(filename,norm);
+    } else {
+      NCRYSTAL_THROW2(BadInput, "Wrong number of inputs given in the @CUSTOM_" << pluginNameUpperCase()
+                                                                      << " section (see the plugin readme for more info).");
+    }
     break;
   }
   case PPF:
@@ -161,8 +175,9 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   NCRYSTAL_THROW2(LogicError,"Bad internal state in createFromInfo for model SANSND plugin");
 };
 
-NCP::PhysicsModel::PhysicsModel(std::string filename)
+NCP::PhysicsModel::PhysicsModel(std::string filename, double norm)
     : m_model(0),
+      m_norm(norm),
       m_helper(([filename]() -> NC::IofQHelper
                 {
       
@@ -198,7 +213,9 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
                 { 
       
       //Generate vector of data q and IofQ
-      NC::VectD q = NC::logspace(-6,1,1000000);
+      double q_min = std::log10(0.007);
+      int sampling =  std::abs(1-q_min)*10000;
+      NC::VectD q = NC::logspace(q_min,1,sampling);
       NC::VectD IofQ = q;
       if (model == 2) { //GPF
 
@@ -269,44 +286,101 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
 
 NCP::PhysicsModel::PhysicsModel(int model, double mono_R)
     : m_model(model),
-      m_mono_R(mono_R)
+      m_mono_R(mono_R),
+      m_helper(([mono_R]() -> NC::IofQHelper
+                {              
+        //Generate vector of data q and IofQ
+        double q_min = std::log10(1e-6);
+        int sampling =  std::abs(1-q_min)*10000;
+        NC::VectD q = NC::logspace(q_min,1,sampling);
+        NC::VectD IofQ = q;
+        double b = 6.646E-05;  // [AA] Carbon coherent scattering length
+        double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
+        double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
+        std::for_each(IofQ.begin(),IofQ.end(),
+                        [mono_R,physical_constant](double &x) { 
+                          double R, osc_term, Nc;
+                          double I=0;
+                          R = mono_R * 10; // converto to AA
+                          nc_assert(R>0); 
+                          osc_term = (sin(x*R) - x*R * cos(x*R)) * (sin(x*R) - x*R * cos(x*R));
+                          //Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
+                          // Nc = V * n = 4/3*pi*R^3 * n
+                          Nc = 0.7420 * R * R * R;
+                          I += std::pow(x, -6) * osc_term / Nc * 1e8;//# convert to barn
+                          x = physical_constant* I ;
+                          }
+                        ); 
+        //Initialize the helper        
+        NC::IofQHelper helper(q,IofQ);
+        return helper;
+         })())
 {
   //std::cout<<"call to constructor for 3"<<std::endl;
-  nc_assert(model == 3);
+  nc_assert(m_model == 3);
 };
 
 NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
     : m_model(model),
-      m_R(),
-      m_freq()
+      m_helper(([model,filename]() -> NC::IofQHelper
+                {           
+                           //std::cout<<"call to constructor for 3 + filename"<<std::endl;
+        nc_assert(model == 3);
+        // read R distribution information
+        NC::VectD Rs,freq;
+        std::string root_rel = "data/";
+        std::string rel_path = root_rel + filename;
+        std::ifstream input_file(rel_path);
+        if (input_file)
+        {
+          double temp_x, temp_y;
+          std::string line;
+          while (std::getline(input_file, line))
+          {
+            std::istringstream iss(line);
+            iss >> temp_x >> temp_y;
+            Rs.push_back(temp_x);
+            freq.push_back(temp_y);
+          }
+        }
+        else
+        {
+          NCRYSTAL_THROW2(BadInput, rel_path << ": Invalid data file for the " << pluginNameUpperCase()
+                                            << " plugin");
+        }        
+         
+        //Generate vector of data q and IofQ
+        double q_min = std::log10(1e-6);
+        int sampling =  std::abs(1-q_min)*10000;
+        NC::VectD q = NC::logspace(q_min,1,sampling);
+        NC::VectD IofQ = q;
+        double b = 6.646E-05;  // [AA] Carbon coherent scattering length
+        double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
+        double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
+        std::for_each(IofQ.begin(),IofQ.end(),
+                        [Rs,freq,physical_constant](double &x) { 
+                          double R, f, osc_term, Nc;
+                          double I=0;
+                          for (size_t i = 0; i < Rs.size(); ++i)
+                          {
+                            R = Rs.at(i) * 10; // converto to AA
+                            nc_assert(R>0);
+                            f = freq.at(i);
+                            osc_term = (sin(x*R) - x*R * cos(x*R)) * (sin(x*R) - x*R * cos(x*R));
+                            //Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
+                            // Nc = V * n = 4/3*pi*R^3 * n
+                            Nc = 0.7420 * R * R * R;
+                            I += f * osc_term / Nc;
+                          }
+                          x = physical_constant * std::pow(x, -6) * I * 1e8 ;//# convert to barn
+                          }
+                        ); 
+        //Initialize the helper        
+        NC::IofQHelper helper(q,IofQ);
+        return helper;
+         })())
 {
-  //std::cout<<"call to constructor for 3 + filename"<<std::endl;
-  nc_assert(model == 3);
-  // read R distribution information
-  NC::VectD R;
-  NC::VectD freq;
-  std::string root_rel = "data/";
-  std::string rel_path = root_rel + filename;
-  std::ifstream input_file(rel_path);
-  if (input_file)
-  {
-    double temp_x, temp_y;
-    std::string line;
-    while (std::getline(input_file, line))
-    {
-      std::istringstream iss(line);
-      iss >> temp_x >> temp_y;
-      R.push_back(temp_x);
-      freq.push_back(temp_y);
-    }
-    m_R = R;
-    m_freq = freq;
-  }
-  else
-  {
-    NCRYSTAL_THROW2(BadInput, rel_path << ": Invalid data file for the " << pluginNameUpperCase()
-                                       << " plugin");
-  }
+ 
 };
 
 double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
@@ -336,7 +410,8 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
       double A2=m_param.value().at(2);
       double b2=m_param.value().at(3);
       double Q0=m_param.value().at(4);
-      SANS_xs = (1/(2*k*k))*(A1/(-b1+2)*std::pow(Q0,-b1+2) + A2/(-b2+2)*std::pow(2*k,-b2+2) - A2/(-b2+2)*std::pow(Q0,-b2+2));
+      //double corr_param = 5.4;
+      SANS_xs = (2*NC::kPi/(k*k))*(A1/(-b1+2)*std::pow(Q0,-b1+2) + A2/(-b2+2)*std::pow(2*k,-b2+2) - A2/(-b2+2)*std::pow(Q0,-b2+2));
     } else {
       NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
                                                                                                      << " plugin");
@@ -344,12 +419,25 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
     break;
   }
   case FILE:
+    {
+    if (m_helper.has_value() && m_norm.has_value())
+    {
+      nc_assert(k!=0);
+      SANS_xs = 2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
+    }
+    else
+    {
+      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized IofQHelper in xs sampling in the " << pluginNameUpperCase()
+                                                                                                     << " plugin");
+    }
+    break;
+  }
   case GPF:
   {
     if (m_helper.has_value())
     {
       nc_assert(k!=0);
-      SANS_xs = 1 / (2 * k * k) * m_helper.value().calcQIofQIntegral(ekin);
+      SANS_xs = 2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
     }
     else
     {
@@ -363,10 +451,10 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
     // b = 6.646E-05;//[AA] <- Carbon coherent scattering length
     // n = 0.1771471666666667;// [at/AA^3] <- Diamond atom density
     // 32*pi^3*(nb)^2 = 1.375E-07 [1/AA^4]
-    double physical_constant = 1.375E-07;
-    SANS_xs = 0;
-    double R, freq, _2kr, I;
-    if (m_R.has_value() && m_freq.has_value())
+    //double physical_constant = 1.375E-07;
+    //SANS_xs = 0;
+    //double R, freq, _2kr, I;
+    /*if (m_R.has_value() && m_freq.has_value())
     {
       for (size_t i = 0; i < m_R.value().size(); ++i)
       {
@@ -381,7 +469,14 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
         SANS_xs += freq * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
       }
       SANS_xs *= physical_constant;
+    }*/
+    
+    if (m_helper.has_value())
+    {
+      nc_assert(k!=0);
+      SANS_xs =  2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
     }
+    /*
     else if (m_mono_R.has_value())
     {
       R = m_mono_R.value() * 10; // converto to AA
@@ -392,13 +487,14 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
       //  Nc = V * n = 4/3*pi*R^3 * n
       double Nc = 0.7420 * R * R * R;
       SANS_xs = physical_constant * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
-    }
+    }*/
     else
     {
       NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
                                                                                                     << " plugin");
     }
     break;
+
   }
   default:
     NCRYSTAL_THROW2(LogicError, "Bad internal state for model in SANSND plugin");
@@ -421,7 +517,6 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
   switch (m_model)
   {
   case PPF:
-  case HSFBA:
   {
     double rand = rng.generate();
     double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
@@ -431,8 +526,11 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     double A2 = 0.0519763;
     double b2 = 3.97314;
     double Q0 = 0.0510821;
+    double corr_param = 5.4;
+    double xs = calcCrossSection(neutron_ekin);
     nc_assert(k!=0);
-    double ratio_sigma = (1 / (2 * k * k)) / calcCrossSection(neutron_ekin); // cross section over total cross section ratio
+    nc_assert(xs!=0);
+    double ratio_sigma = (  2*NC::kPi / ( k * k) ) / xs ; // cross section over total cross section ratio
     double CDF_Q0 = (A1 * std::pow(Q0, -b1 + 2) / (-b1 + 2)) * ratio_sigma;
     if (rand < CDF_Q0)
     {
@@ -444,6 +542,8 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     }
     break;
   }
+  case FILE:
+  case HSFBA:
   case GPF:
   {
     if (m_helper.has_value())

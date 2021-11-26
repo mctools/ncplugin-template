@@ -28,7 +28,7 @@ namespace NCPluginNamespace {
     static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
 
     //Constructor gets the filename of the input data file:
-    PhysicsModel(std::string filename );
+    PhysicsModel(std::string filename, double norm = 1 );
     //Constructor gets the models string and the param:
     PhysicsModel( int model, double p0, double p1, double p2, double p3, double p4 );
     //Constructor gets the models string and nanoparticle radius R :
@@ -53,8 +53,9 @@ namespace NCPluginNamespace {
     NC::Optional<NC::IofQHelper> m_helper;
     //for theoretical NP_FBA
     NC::Optional<double> m_mono_R;
-    NC::Optional<NC::VectD> m_R;
-    NC::Optional<NC::VectD> m_freq;
+    //NC::Optional<std::pair<NC::VectD,NC::VectD>> m_R_freq;
+    //for reading from file
+    NC::Optional<double> m_norm;
   };
 
 }
