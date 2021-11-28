@@ -9,11 +9,22 @@ random.seed(123456)#reproducible random streams
 
 class PhysicsModel:
 
-    """Python version of the PhysicsModel class defined in the plugin."""
+    #"""Python version of the PhysicsModel class defined in the plugin."""
+    #def __init__(self,model,p0,p1,p2,p3,p4):
+    #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
+    #    self.__modelparams=(model,p0,p1,p2,p3,p4)
 
-    def __init__(self,A1, b1, A2, b2, Q0, sigma0):
+   #def __init__(self,filename):
+    #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
+    #    self.__modelparams=filename
+
+    def __init__(self,model,mono_R):
         """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
-        self.__modelparams=(A1, b1, A2, b2, Q0, sigma0)
+        self.__modelparams=(model,mono_R)
+    
+    #def __init__(self,model,filename):
+    #    """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
+    #    self.__modelparams=(model,filename)
 
     def calcCrossSection(self,ekin):
         """Calculates cross sections. The ekin parameter can be a float or a numpy

@@ -4,7 +4,7 @@
 # Anything special that needs to be done to support the plugin development
 # environment can be done in testcode/CMakeLists.txt, so it won't affect the main plugin.
 
-cmake_minimum_required(VERSION 3.15.3)
+cmake_minimum_required(VERSION 3.10...3.19)
 
 #Extract plugin name from ncplugin_name.txt:
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/ncplugin_name.txt" NCPlugin_NAME LIMIT_COUNT 1)

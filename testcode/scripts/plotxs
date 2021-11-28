@@ -6,7 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas
 
-physmodel = ncplugin.PhysicsModel( A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=5.551)
+#physmodel = ncplugin.PhysicsModel( A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=5.551)
+physmodel = ncplugin.PhysicsModel(2, p0=66,p1=1.5,p2=14.64, p3=4.15, p4=2.13)
+#physmodel = ncplugin.PhysicsModel(b"PPF", 132.869, -1.33605, 0.0519763, -3.97314, 0.0510821)
 
 print('cross section @   3.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(3.0)) )
 print('cross section @   7.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(7.0)) )
@@ -20,7 +22,7 @@ print('cross section @ 0.001 eV : %g barn'%physmodel.calcCrossSection( 0.001 ) )
 #plt.show()
 
 
-ekin = np.linspace(0.0001,10.0,1000000)
+ekin = np.linspace(0.0001,10.0,100)
 plt.plot( ekin, physmodel.calcCrossSection(ekin) )
 plt.xscale('log')
 plt.yscale('log')

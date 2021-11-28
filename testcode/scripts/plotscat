@@ -1,27 +1,104 @@
 #!/usr/bin/env python3
 
+from numpy.lib.function_base import diff
 import ncplugin
 import NCrystal as NC
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
+from scipy.optimize import curve_fit
+import pandas as pd
+plt.rc('font', family='serif')
 
-physmodel = ncplugin.PhysicsModel(A1=132.869, b1=-1.33605, A2=0.0519763, b2=-3.97314, Q0=0.0510821, sigma0=5.551)
+#physmodel = ncplugin.PhysicsModel(1, p0=132.869, p1=1.33605, p2=0.0519763, p3=3.97314, p4=0.0510821)
+physmodel = ncplugin.PhysicsModel(3, 2.5)
+#physmodel = ncplugin.PhysicsModel(b"teshi.dat")
+#physmodel2 = ncplugin.PhysicsModel(2, p0=66,p1=1.5,p2=14.64, p3=4.15, p4=2.13)
+#physmodel2 = ncplugin.PhysicsModel(b"Grammer_data_1.dat")
+physmodel2 = ncplugin.PhysicsModel(3, 5)
 
-nsample = int(1e6)#Warning consumes nsample*8 bytes of memory, so don't be silly
+nsample = int(1e7)#Warning consumes nsample*8 bytes of memory, so don't be sillys
                   #and put to 1e10 (if such large numbers are needed, rewrite
                   #code below as loop which samples e.g. 1e6 at a time).
 
-nbins = 180
-for wl in np.arange(22,0.5,-7):
-    muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
-    print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
-    plt.hist(muvals, bins=nbins,alpha=0.5, label=f'wavelength {wl} Å')
+fig, ax = plt.subplots(1,1, figsize=(5, 6), dpi=200)
+nbins = 200
+wl = 1
+muvals = physmodel.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
+#qvals = [2*np.pi/wl*np.sqrt(2*(1 - mu)) for mu in muvals]
+thetavals = np.rad2deg(np.arccos(muvals))
+print(f"Average mu in {float(len(muvals)):g}: {muvals.sum()/len(muvals)} with neutron wavelength: {wl}")
+plt.hist(thetavals, bins=nbins, label=f'NCrystal HSFBA R=2.5nm',range=(0,40),color="tab:blue", fill=False,histtype="step",density=True,align="right")
 
+muvals2 = physmodel2.sampleScatMu( NC.wl2ekin(wl), nvalues=nsample )
+print(f"Average mu in {float(len(muvals2)):g}: {muvals2.sum()/len(muvals2)} with neutron wavelength: {wl}")
+qvals2 = [2*np.pi/wl*np.sqrt(2*(1 - mu)) for mu in muvals2]
+thetavals2 = np.rad2deg(np.arccos(muvals2))
+plt.hist(thetavals2, bins=nbins, label=f'NCrystal HSFBA R=5nm',range=(0,40),color="tab:red", fill=False,histtype="step",density=True,align="right")
+
+#with open("data/theta_PPF", "wb") as f: 
+#    pickle.dump(zip(thetavals, thetavals2),f)
+#f.close()
 #An isotropic distrigbution is constant wrt mu:
-#plt.plot( [0.9,1.0],[len(muvals)/nbins]*2 ,label = 'Isotropic', color='red' )
+#plt.plot( [-1,1],[len(muvals)/nbins]*2 ,label = 'Isotropic' ,color='b' )
+#theor_data_25AA = pd.read_csv("data/theoretical_theta_25AA", names=["theta","p"],sep='\t')
+#theor_data_50AA = pd.read_csv("data/theoretical_theta_50AA", names=["theta","p"],sep='\t')
 
-plt.title(r'$\mu=\cos(\theta)$' + f' distribution in {float(len(muvals)):g} scattering events')
-plt.legend()
-plt.xlabel(r'$\mu=\cos(\theta)$')
-plt.yscale('log')
+#plt.plot(theor_data_25AA["theta"],theor_data_25AA["p"],color="tab:blue",label="Theoretical R=2.5nm",lw=1,ls="dashed")
+#plt.plot(theor_data_50AA["theta"],theor_data_50AA["p"],color="tab:red", label="Theoretical R=5nm",lw=1,ls="dashed")
+
+plt.xlim(0,40)
+
+#plt.title(r'$\theta$' + f' distribution for scattering events with'+ fr' $\lambda={wl}\AA$')
+leg = ax.legend()
+leg.get_frame().set_edgecolor('k')
+leg.get_frame().set_linewidth(1)
+plt.xlabel(r'$\theta$ (deg)')
+plt.ylabel("Probability density")
+plt.tight_layout()
+#plt.savefig("Sampled_that_HSFBA.png",dpi=200)
+#plt.savefig("Sampled_that_HSFBA.eps",dpi=200)
+#plt.yscale('log')
+#plt.xscale('log')
 plt.show()
+"""
+fig2, ax = plt.subplots(1,1, figsize=(6, 4), dpi=100)
+
+values, bins, _ = plt.hist(qvals,alpha=0.5, bins=np.logspace(-7,0,nbins),label=f'PPF',color="k", fill=False,histtype="step",density=True)
+#values_corr = values/np.diff(bins)
+##FIT CURVE###
+def piecewise_power(x,A1,b1,A2,b2):
+    result=x.copy()
+    mask = result<0.051
+    result[mask] = A1*np.power(x,-b1)
+    result[np.invert(mask)] =  A2*np.power(x,-b2)
+    return result
+
+popt,pcov = curve_fit(piecewise_power,
+                      pd.Series(bins[100:-10]),
+                      pd.Series(values[100:-9]), 
+                      p0=[1e2,1.33,0.05,3.97]
+                      #bounds=((0, 1, 0, 3),(np.inf,np.inf,20, 10))
+                          )
+perr = np.sqrt(np.diag(pcov))
+print(popt)
+x_fit_PPF = [x for x in np.logspace(-7,0,nbins)]
+y_fit_PPF=piecewise_power(pd.Series(x_fit_PPF),*popt)
+plt.plot(x_fit_PPF,y_fit_PPF, c="tab:red",label=f"b1={popt[1]:.2f}\nb2={popt[3]:.2f}",linestyle=":")
+#area = sum(np.diff(bins)*values)
+#print("AREA PPF: ", area)
+
+values2, bins2, _ = plt.hist(qvals2,alpha=0.5, bins=np.logspace(-7,0,nbins),label=f'GPF',color="r", fill=False,histtype="step",density=True)
+#area2 = sum(np.diff(bins2)*values2)
+#print("AREA PPF: ", area2)
+
+
+
+plt.title( f'q distribution in {float(nsample):g} scattering events'+ r' $\lambda={}\AA$'.format(wl))
+plt.legend()
+#plt.xlabel(r'$\mu=\cos(\theta)$')
+plt.xlabel("q")
+plt.yscale('log')
+plt.xscale('log')
+plt.show()
+"""

@@ -6,12 +6,13 @@ int main()
 {
   //Very simple test which instantiates our model and calculates a few cross
   //sections and samples a few scattering events:
+  //NC::VectD param{132.869, -1.33605, 0.0519763, -3.97314, 0.0510821, 5.551};
+  //auto pm = NCP::PhysicsModel(NCrystalPlugin_SANSND::PhysicsModel::Model::PPF, 132.869, 1.33605, 0.0519763, 3.97314, 0.0510821);
+  auto pm = NCP::PhysicsModel(NCrystalPlugin_SANSND::PhysicsModel::Model::PPF, "teshi_xs");
 
-  auto pm = NCP::PhysicsModel(132.869, -1.33605, 0.0519763, -3.97314, 0.0510821, 5.551);
-
-  for ( auto wl : NC::linspace(0.01, 8.0, 20) ) {
-    std::cout << "cross section @ " << wl << " Aa is "
-              << pm.calcCrossSection( NC::wl2ekin(wl) ) <<" barn" << std::endl;
+  for ( auto en :  NC::logspace(-4,1,50) ) {
+    std::cout << "cross section @ " << en << " eV is "
+              << pm.calcCrossSection( en ) <<" barn" << std::endl;
   }
 
   auto rng = NC::getRNG();

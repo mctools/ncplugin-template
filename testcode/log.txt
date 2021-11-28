@@ -1,0 +1,6 @@
+ncpluginbuild: clearing /home/nicorizzi/ncplugin-SANSND/testcode/utils/cache/install
+ncpluginbuild: Building with 6 processes.
+Scanning dependencies of target pluginlib
+[ 11%] Building CXX object CMakeFiles/pluginlib.dir/src/NCPhysicsModel.cc.o
+[ 22%] Building CXX object CMakeFiles/pluginlib.dir/src/NCPluginFactory.cc.o
+ncpluginbuild: Aborting due to build errors (if weird try to rerun with --force flag).

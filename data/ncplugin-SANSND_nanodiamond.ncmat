@@ -1,4 +1,4 @@
-NCMAT v3
+NCMAT v5
 #Diamond.
 #
 #Crystal structure was converted from the cif file of the entry 0011242 in the AMCSD.
@@ -32,8 +32,6 @@ NCMAT v3
   C 3/4 3/4 1/4
   C 0   1/2 1/2
   C 3/4 1/4 3/4
-@DEBYETEMPERATURE
-  C 1920.3
 @DYNINFO
   element  C
   fraction 1
@@ -89,7 +87,6 @@ NCMAT v3
 
 @CUSTOM_SANSND
 # custom physics that enables SANS for nanodiamond particles
-  1.0                                   # plugin version
-  132.869 -1.33605 0.0519763 -3.97314   # piecewise power law parameters (A1, b1, A2, b2)
-  0.0510821 5.551                       # boundary parameter and par for absolute cross section    
-
+2.0                                   # plugin version
+PPF
+132.869 1.33605 0.0519763 3.97314 0.0510821   
