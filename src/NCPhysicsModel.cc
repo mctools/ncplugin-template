@@ -213,9 +213,9 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
                 { 
       
       //Generate vector of data q and IofQ
-      double q_min = std::log10(0.007);
-      int sampling =  std::abs(1-q_min)*10000;
-      NC::VectD q = NC::logspace(q_min,1,sampling);
+      double q_min = 0.05;
+      int sampling =  std::abs(1- std::log10(q_min))*10000;
+      NC::VectD q = NC::logspace(std::log10(q_min),1,sampling);
       NC::VectD IofQ = q;
       if (model == 2) { //GPF
 
@@ -226,19 +226,23 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         double p=p4;
         //Q1 is when IofQ stops being evaluated as power law and Guinier starts (maybe parameter?)
         double Q1=0.016;
-        auto it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
-        //Approximation valid as long as we have high sampling. Otherwise interpolation needed
-        if (it_q1==IofQ.end()) 
-          NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
-                            <<" section (see the plugin readme for more info)" );
-        if (it_q1==IofQ.begin()) 
-          NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1 smaller then 1e-5 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
-                            <<" section (see the plugin readme for more info)" );
-        nc_assert(s!=3);
-        double C = A*std::pow(Q1,p-s)*std::exp((-Q1*Q1*rg*rg)/(3-s));
-        std::for_each(IofQ.begin(),it_q1,
-                      [C,p](double &x) { x = C*std::pow(x,-p);}
-                      ); 
+        NCrystal::VectD::iterator it_q1;
+        if (Q1>q_min){
+          it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
+          //Approximation valid as long as we have high sampling. Otherwise interpolation needed
+          if (it_q1==IofQ.end()) 
+            NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
+                              <<" section (see the plugin readme for more info)" );
+          nc_assert(s!=3);
+          double C = A*std::pow(Q1,p-s)*std::exp((-Q1*Q1*rg*rg)/(3-s));
+          std::for_each(IofQ.begin(),it_q1,
+                        [C,p](double &x) { x = C*std::pow(x,-p);}
+                        ); 
+
+        } else {
+          std::cout << "Given Q_min smaller then Q1. No low-q power law implemented (see the plugin readme for more info)\n"; 
+          it_q1 = IofQ.begin();
+        }
         //evaluate Q2 where IofQ stops being evaluated as Guinier and Porod starts
         double Q2 = 1.0/rg*std::sqrt((m-s)*(3-s)/2);
         //IofQ still filled with q here

@@ -26,7 +26,7 @@ namespace NCPluginNamespace {
 
     static bool isApplicable( const NC::Info& );
     static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
-
+    
     //Constructor gets the filename of the input data file:
     PhysicsModel(std::string filename, double norm = 1 );
     //Constructor gets the models string and the param:

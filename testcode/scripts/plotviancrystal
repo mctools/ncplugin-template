@@ -11,6 +11,8 @@ import ncplugin#<--- our own module developed here
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas
+from itertools import cycle
+from cycler import cycler
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 ncplugin.registerPlugin()#<---register our plugin with NCrystal
@@ -47,6 +49,7 @@ p=2.13
 #p=2.25
 
 R=2.5
+Q_min = 0.05
 
 A_simple=8.34
 
@@ -194,7 +197,8 @@ sc_plugin5 = NC.createScatter("customDiamond5.ncmat")
 #
 #wls = np.linspace(0.01,10.0,1000)
 fig, ax = plt.subplots(1,1, figsize=(7, 5), dpi=300)
-
+linestyles = ["solid", "dashed", "dashdot", "dotted", (0,(5,1))]
+new_ls_cycler = cycle(linestyles)
 #plt.rcParams["font.family"] = "cursive"
 energies = np.logspace(-5,0,100000)
 xs =  sc_plugin.crossSectionNonOriented(energies)
@@ -210,12 +214,12 @@ print("\ncross section Teshi @ 0.001 ", sc_plugin3.crossSectionNonOriented(0.001
 print("\ncross section Grammer @ 0.001 ", sc_plugin4.crossSectionNonOriented(0.001))
 print("\ncross section HS @ 0.001 ", sc_plugin5.crossSectionNonOriented(0.001))
 #print("\ncross section Simple @ 0.01 ", sc_plugin6.crossSectionNonOriented(0.01))
-plt.plot(energies, xs_std, label="Standard Diamond NCrystal",linestyle='dashed',color="tab:green",linewidth=1)
-plt.plot(energies, xs, label="SANS Piecewise Power-law", linestyle=(0,(5,1)), color="tab:cyan",linewidth=1)
-plt.plot(energies, xs2, label="Guinier-Porod + Power law",color="tab:purple",linewidth=1)
-plt.plot(energies, xs3, label="file (Teshigwara et al. [2019])", color="tab:blue",linewidth=1)
-plt.plot(energies, xs5, label=f"HSFBA R={R:.2f} nm", color="tab:brown",linewidth=1)
-plt.plot(energies, xs4, label=f"HSFBA Teshi. R distrib.", color="tab:red",linewidth=1)
+plt.plot(energies, xs_std, label="Standard Diamond NCrystal",linestyle='solid',color="tab:green",linewidth=1.5)
+plt.plot(energies, xs, label="SANS Piecewise Power-law", linestyle=next(new_ls_cycler), color="tab:cyan",linewidth=1.5)
+plt.plot(energies, xs2, label=f"Guinier-Porod {Q_min}",color="tab:purple",linewidth=1.5,ls=next(new_ls_cycler))
+plt.plot(energies, xs3, label="Datapoint Teshigwara et al. [2019]", color="tab:blue",linewidth=1.5,ls=next(new_ls_cycler))
+plt.plot(energies, xs5, label=f"HSFBA R={R:.2f} nm", color="tab:brown",linewidth=1.5,ls=next(new_ls_cycler))
+plt.plot(energies, xs4, label=f"HSFBA Teshi. R distrib.", color="tab:red",linewidth=1.5,ls=next(new_ls_cycler))
 #plt.plot(energies, xs6, label=f"Simple A={A_simple:.2f}", color="tab:cyan")
 #plt.plot( wls, sc_std_incelas_only.xsect(wl=wls), label='Standard NCrystal [only inc. elas.]' )
 #plt.plot( wls, sc_plugin_incelas_only.xsect(wl=wls), label='With new plugin [only inc. elas.]' )
@@ -236,8 +240,8 @@ vesuvio_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/ve
 vesuvio_data_masked = vesuvio_data[vesuvio_data["E"]<1]
 list_i_even = [i for i in range(0,len(vesuvio_data_masked["E"])) if i%5==0]
 #njoy_data = pandas.read_csv("/home/nicorizzi/ncplugin-SANSND/testcode/data/njoy_calc.txt", sep=" ")
-plt.scatter(teshi_data["E"],teshi_data["xs"], s=12, facecolors='none', edgecolors='tab:blue', linewidth=0.5,label='Teshigawara at al. [2019]')
-plt.scatter(vesuvio_data_masked["E"].iloc[list_i_even] ,vesuvio_data_masked["xs"].iloc[list_i_even],s=12, marker="s",linewidth=0.5, facecolors='none', edgecolors='tab:red',label='VESUVIO exp. [2019]')
+plt.scatter(teshi_data["E"],teshi_data["xs"], s=15, facecolors='none', edgecolors='tab:blue', linewidth=0.5,label='Teshigawara at al. [2019]')
+plt.scatter(vesuvio_data_masked["E"].iloc[list_i_even] ,vesuvio_data_masked["xs"].iloc[list_i_even],s=15, marker="s",linewidth=0.5, facecolors='none', edgecolors='tab:red',label='VESUVIO exp. [2019]')
 #plt.scatter(njoy_data["E"],njoy_data["xs"],s=15, facecolors='none', edgecolors='b',label='Granada et al. [2020]')
 
 plt.xlabel('Energy (eV)')
@@ -249,25 +253,30 @@ leg.get_frame().set_linewidth(1)
 #plt.grid(which='both', linestyle=':')
 plt.loglog()
 plt.tight_layout()
-axins = zoomed_inset_axes(ax, zoom=5, loc="lower left")
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
+axins = inset_axes(ax,width=1.8, height=0.9,
+          bbox_transform=ax.transAxes, bbox_to_anchor=(0.4,0.6),)
+
 axins.scatter(teshi_data["E"],teshi_data["xs"], s=12, facecolors='none', edgecolors='tab:blue', linewidth=0.5,label='Teshigawara at al. [2019]')
 axins.scatter(vesuvio_data_masked["E"].iloc[list_i_even] ,vesuvio_data_masked["xs"].iloc[list_i_even],s=12, marker="s",linewidth=0.5, facecolors='none', edgecolors='tab:red',label='VESUVIO exp. [2019]')
-axins.plot(energies, xs_std, linestyle='dashed',color="tab:green",linewidth=1)
-axins.plot(energies, xs, linestyle=(0,(5,1)), color="tab:cyan",linewidth=1)
-axins.plot(energies, xs2, color="tab:purple",linewidth=1)
-axins.plot(energies, xs3, color="tab:blue",linewidth=1)
-axins.plot(energies, xs5, color="tab:brown",linewidth=1)
-axins.plot(energies, xs4, color="tab:red",linewidth=1)
-axins.set_xscale("log")
-axins.set_yscale("log")
+#axins.plot(energies, xs_std, linestyle='dashed',color="tab:green",linewidth=1)
+axins.plot(energies, xs, color="tab:cyan",linewidth=1,ls=next(new_ls_cycler))
+axins.plot(energies, xs2, color="tab:purple",linewidth=1.5,ls=next(new_ls_cycler))
+axins.plot(energies, xs3, color="tab:blue",linewidth=1,ls=next(new_ls_cycler))
+axins.plot(energies, xs5, color="tab:brown",linewidth=1.5,ls=next(new_ls_cycler))
+axins.plot(energies, xs4, color="tab:red",linewidth=1.5,ls=next(new_ls_cycler))
+#axins.set_xscale("log")
+#axins.set_yscale("log")
 # sub region of the original image
-x1, x2, y1, y2 = 1e-3, 2e-3, 1e2, 5e2
+x1, x2, y1, y2 = 0.995e-3, 1.005e-3, 2.38e2, 2.415e2
 axins.set_xlim(x1, x2)
 axins.set_ylim(y1, y2)
 # fix the number of ticks on the inset axes
-#axins.yaxis.get_major_locator().set_params(nbins=7)
-#axins.xaxis.get_major_locator().set_params(nbins=7)
-axins.tick_params(axis="both", which="both",left=False, right=False, bottom=False, labelleft=False, labelbottom=False)
+#axins.yaxis.get_minor_locator().set_params(3)
+axins.set_xticks([x1,0.001,x2])
+axins.set_xticklabels([f"{x1:.2e}",f"{0.001:.0e}",f"{x2:.3e}"])
+axins.tick_params(axis="both", which="both",left=True, right=False, bottom=True, labelleft=True, labelbottom=True,labelsize=8)
 
 # draw a bbox of the region of the inset axes in the parent axes and
 # connecting lines between the bbox and the inset axes area
@@ -293,5 +302,5 @@ plt.xscale('log')
 plt.gca().set_xlim(right=1)
 
 
-plt.show()
+#plt.show()
 
