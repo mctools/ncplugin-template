@@ -41,16 +41,8 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   // Parse and validate values:
   double supp_version = 2.0;
   double version;
-  // NC::VectD param;
-  enum model_def
-  {
-    FILE,
-    PPF,
-    GPF,
-    HSFBA
-  };
-  int model;
-  double p0, p1, p2, p3, p4;
+  NC::VectD param;
+
   if (!NC::safe_str2dbl(data.at(0).at(0), version))
     NCRYSTAL_THROW2(BadInput, "Invalid version input in the @CUSTOM_" << pluginNameUpperCase()
                                                                       << " section (see the plugin readme for more info).");
@@ -58,19 +50,11 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   if (!(version == supp_version))
     NCRYSTAL_THROW2(BadInput, "Invalid version specified for the " << pluginNameUpperCase()
                                                                    << " plugin. Only the version " << supp_version << " is supported.");
-  if (!NC::safe_str2int(data.at(1).at(0), model))
-    NCRYSTAL_THROW2(BadInput, "Invalid model input in the @CUSTOM_" << pluginNameUpperCase()
-                                                                    << " section (see the plugin readme for more info).");
-  if (model < 0 || model > 3)
-    NCRYSTAL_THROW2(BadInput, "Invalid model input in the @CUSTOM_" << pluginNameUpperCase()
-                                                                    << " section (see the plugin readme for more info).");
-  switch (model)
+  if (data.at(1).at(0) == "FILE")
   {
-  case FILE:
-  {
-    if(data.at(2).empty())
-      NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
-                                                                  << " plugin is invalid or the file could not be found in the data/ directory. ");
+    std::cout << "FILE MODE selected" << std::endl;
+    if (data.at(2).empty())
+      NCRYSTAL_THROW2(BadInput, "FILE MODE selected but no filename is specified for the " << pluginNameUpperCase() << " plugin ");
 
     std::string filename = data.at(2).at(0);
     std::string root_rel = "data/";
@@ -81,71 +65,69 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     if (!(stat(rel_path.c_str(), &buffer) == 0))
       NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
                                                                   << " plugin is invalid or the file could not be found in the data/ directory. ");
-    if(data.at(2).size()==1){                                                         
-      return PhysicsModel(filename);
-    } else if (data.at(2).size()==2){
-      double norm;
-      if (!NC::safe_str2dbl(data.at(2).at(1), norm))
-      NCRYSTAL_THROW2(BadInput, "Invalid normalization factor given in the @CUSTOM_" << pluginNameUpperCase()
-                                                                      << " section (see the plugin readme for more info).");
-      return PhysicsModel(filename,norm);
-    } else {
-      NCRYSTAL_THROW2(BadInput, "Wrong number of inputs given in the @CUSTOM_" << pluginNameUpperCase()
-                                                                      << " section (see the plugin readme for more info).");
-    }
-    break;
+    Model model = Model::FILE;
+    return PhysicsModel(model, filename);
   }
-  case PPF:
+  else if (data.at(1).at(0) == "PPF")
   {
-    if (!NC::safe_str2dbl(data.at(2).at(0), p0) || !NC::safe_str2dbl(data.at(2).at(1), p1) || !NC::safe_str2dbl(data.at(2).at(2), p2) || !NC::safe_str2dbl(data.at(2).at(3), p3) || !NC::safe_str2dbl(data.at(2).at(4), p4)
-        //|| ! NC::safe_str2dbl( data.at(2).at(5), sigma0 )
-    )
-    {
-      NCRYSTAL_THROW2(BadInput, "Invalid values specified for model " << model << " in the @CUSTOM_" << pluginNameUpperCase()
-                                                                      << " section (see the plugin readme for more info)");
-    }
-    else
-    {
-      // CHECK THE INPUT PARAM
-      nc_assert(p0 > 0);
-      nc_assert(p1 > 0);
-      nc_assert(p2 > 0);
-      nc_assert(p3 > 0);
-      nc_assert(p4 > 0);
+    std::cout << "Mode PPF selected" << std::endl;
+    double A1, b1, A2, b2, Q0;
+    if (!NC::safe_str2dbl(data.at(2).at(0), A1) || !NC::safe_str2dbl(data.at(2).at(1), b1) || !NC::safe_str2dbl(data.at(2).at(2), A2) || !NC::safe_str2dbl(data.at(2).at(3), b2) || !NC::safe_str2dbl(data.at(2).at(4), Q0))
+      NCRYSTAL_THROW2(BadInput, "Invalid values specified for model PPF in the @CUSTOM_" << pluginNameUpperCase()
+                                                                                         << " section (see the plugin readme for more info)");
+    // CHECK THE INPUT PARAM
+    nc_assert(A1 > 0);
+    nc_assert(b1 > 0);
+    nc_assert(A2 > 0);
+    nc_assert(b2 > 0);
+    nc_assert(Q0 > 0);
 
-      // param.insert(param.end(), {A1,b1,A2,b2,Q0,sigma0});
-      // Parsing done! Create and return our model:
-      return PhysicsModel(model, p0, p1, p2, p3, p4);
-    }
-    break;
+    param.insert(param.end(), {A1, b1, A2, b2, Q0});
+    Model model = Model::PPF;
+    // Parsing done! Create and return our model:
+    return PhysicsModel(model, param);
   }
-  case GPF:
+  else if (data.at(1).at(0) == "GPF")
   {
-    if (!NC::safe_str2dbl(data.at(2).at(0), p0) || !NC::safe_str2dbl(data.at(2).at(1), p1) || !NC::safe_str2dbl(data.at(2).at(2), p2) || !NC::safe_str2dbl(data.at(2).at(3), p3) || !NC::safe_str2dbl(data.at(2).at(4), p4))
-    {
-      NCRYSTAL_THROW2(BadInput, "Invalid values specified for model " << model << " in the @CUSTOM_" << pluginNameUpperCase()
-                                                                      << " section (see the plugin readme for more info)");
+    std::cout << "Mode GPF selected" << std::endl;
+    double A, s, rg, m, p, Qmin, Q1;
+    if (!NC::safe_str2dbl(data.at(2).at(0), A) || !NC::safe_str2dbl(data.at(2).at(1), s) || !NC::safe_str2dbl(data.at(2).at(2), rg) || !NC::safe_str2dbl(data.at(2).at(3), m) || !NC::safe_str2dbl(data.at(2).at(4), p) || !NC::safe_str2dbl(data.at(2).at(5), Qmin))
+      NCRYSTAL_THROW2(BadInput, "Invalid values specified for model GPF in the @CUSTOM_" << pluginNameUpperCase()
+                                                                                         << " section (see the plugin readme for more info)");
+    // CHECK THE INPUT PARAM
+    nc_assert(A > 0);
+    nc_assert(s > 0);
+    nc_assert(rg > 0);
+    nc_assert(m > 0);
+    nc_assert(p > 0);
+    nc_assert(Qmin > 0);
+    if (data.at(2).size()==6)
+    { 
+      std::cout << "Q1 not inserted. Default 0.016 used." << std::endl;
+      Q1 = 0.016;
     }
-    else
+    if (data.at(2).size()==7)
     {
-      // CHECK THE INPUT PARAM
-      nc_assert(p0 > 0);
-      nc_assert(p1 > 0);
-      nc_assert(p2 > 0);
-      nc_assert(p3 > 0);
-      nc_assert(p4 > 0);
-      // param.insert(param.end(), {A,s,rg,m});
-      // Parsing done! Create and return our model:
-      return PhysicsModel(model, p0, p1, p2, p3, p4);
+      if(!NC::safe_str2dbl(data.at(2).at(6), Q1))
+      NCRYSTAL_THROW2(BadInput, "Invalid Q1 value specified for model GPF in the @CUSTOM_" << pluginNameUpperCase()
+                                                                                         << " section (see the plugin readme for more info)");
     }
-    break;
+    nc_assert(Q1 > 0);
+    param.insert(param.end(), {A, s, rg, m, p, Qmin, Q1});
+    Model model = Model::GPF;
+    // Parsing done! Create and return our model:
+    return PhysicsModel(model, param);
   }
-  case HSFBA:
+  else if (data.at(1).at(0) == "HSFBA")
   {
-    if (NC::safe_str2dbl(data.at(2).at(0), p0))
+    std::cout << "Mode HSFBA selected" << std::endl;
+    Model model = Model::HSFBA;
+    double R;
+    if (NC::safe_str2dbl(data.at(2).at(0), R))
     {
-      nc_assert(p0 > 0);
-      return PhysicsModel(model, p0);
+      nc_assert(R > 0);
+      param.push_back(R);
+      return PhysicsModel(model, param);
     }
     else
     {
@@ -156,78 +138,137 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
       // check existence
       struct stat buffer;
       if (!(stat(rel_path.c_str(), &buffer) == 0))
-      {
         NCRYSTAL_THROW2(BadInput, "The filename specified for the " << pluginNameUpperCase()
                                                                     << " plugin is invalid or the file could not be found in the data/ directory. ");
-      }
-      else
-      {
-        // CHECK THE INPUT PARAM
-        return PhysicsModel(model, filename);
-      }
+      // CHECK THE INPUT PARAM
+      return PhysicsModel(model, filename);
     }
-    break;
   }
-  default:
-    NCRYSTAL_THROW2(BadInput, "Bad input specified in the @CUSTOM_" << pluginNameUpperCase()
-                                                                    << " section (see the plugin readme for more info)");
+  else
+  {
+    NCRYSTAL_THROW2(BadInput, "Invalid model input in the @CUSTOM_" << pluginNameUpperCase()
+                                                                    << " section (see the plugin readme for more info).");
   }
-  NCRYSTAL_THROW2(LogicError,"Bad internal state in createFromInfo for model SANSND plugin");
 };
 
-NCP::PhysicsModel::PhysicsModel(std::string filename, double norm)
-    : m_model(0),
-      m_norm(norm),
-      m_helper(([filename]() -> NC::IofQHelper
+NCP::PhysicsModel::PhysicsModel(Model model, std::string filename)
+    : m_model(model),
+      m_helper(([model, filename]() -> NC::IofQHelper
                 {
-      
-      //Parse the input file and create the vector with the q, Iq info
       NC::VectD q;
       NC::VectD IofQ;
-      std::string root_rel = "data/";
-      std::string rel_path = root_rel+filename;
-      std::ifstream input_file(rel_path);
-      if(input_file) {
-        double temp_x, temp_y;
-        std::string line;
-        while (std::getline(input_file, line)){
+      switch(model)
+      {
+        case Model::FILE:
+        {
+          //Parse the input file and create the vector with the q, Iq info
+          std::string root_rel = "data/";
+          std::string rel_path = root_rel+filename;
+          std::ifstream input_file(rel_path);
+          if(input_file) {
+            double temp_x, temp_y;
+            std::string line;
+            while (std::getline(input_file, line)){
+                  std::istringstream iss(line);
+                  iss >> temp_x >> temp_y;
+                  q.push_back(temp_x);
+                  IofQ.push_back(temp_y);
+            }
+          } else {
+            NCRYSTAL_THROW2( BadInput,rel_path << ": Invalid data file for the "<<pluginNameUpperCase()
+                            <<" plugin" );   
+          }
+          break;
+        }
+        case Model::HSFBA:
+        {
+          NC::VectD Rs,freq;
+          std::string root_rel = "data/";
+          std::string rel_path = root_rel + filename;
+          std::ifstream input_file(rel_path);
+          if (input_file)
+          {
+            double temp_x, temp_y;
+            std::string line;
+            while (std::getline(input_file, line))
+            {
               std::istringstream iss(line);
               iss >> temp_x >> temp_y;
-              q.push_back(temp_x);
-              IofQ.push_back(temp_y);
+              Rs.push_back(temp_x);
+              freq.push_back(temp_y);
+            }
+          }
+          else
+          {
+            NCRYSTAL_THROW2(BadInput, rel_path << ": Invalid data file for the " << pluginNameUpperCase()
+                                              << " plugin");
+          }        
+          
+          //Generate vector of data q and IofQ
+          double q_min = std::log10(1e-6);
+          int sampling =  std::abs(1-q_min)*10000;
+          q = NC::logspace(q_min,1,sampling);
+          IofQ = q;
+          double b = 6.646E-05;  // [AA] Carbon coherent scattering length
+          double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
+          double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
+          std::for_each(IofQ.begin(),IofQ.end(),
+                          [Rs,freq,physical_constant](double &x) { 
+                            double R, f, osc_term, Nc;
+                            double I=0;
+                            for (size_t i = 0; i < Rs.size(); ++i)
+                            {
+                              R = Rs.at(i) * 10; // converto to AA
+                              nc_assert(R>0);
+                              f = freq.at(i);
+                              osc_term = (sin(x*R) - x*R * cos(x*R)) * (sin(x*R) - x*R * cos(x*R));
+                              //Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
+                              // Nc = V * n = 4/3*pi*R^3 * n
+                              Nc = 0.7420 * R * R * R;
+                              I += f * osc_term / Nc;
+                            }
+                            x = physical_constant * std::pow(x, -6) * I * 1e8 ;//# convert to barn
+                            }
+                          ); 
+          break;
         }
-      } else {
-        NCRYSTAL_THROW2( BadInput,rel_path << ": Invalid data file for the "<<pluginNameUpperCase()
-                        <<" plugin" );   
       }
       NC::IofQHelper helper(q,IofQ);
       return helper; })()){
-        //std::cout<<"call to constructor for 0"<<std::endl;
-        //std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
+          // std::cout<<"call to constructor for 0"<<std::endl;
+          // std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
       };
 
-NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, double p3, double p4)
+NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
     : m_model(model),
-      m_param({p0, p1, p2, p3, p4}),
-      m_helper(([model, p0, p1, p2, p3, p4]() -> NC::IofQHelper
+      m_param(param),
+      m_helper(([model, param]() -> NC::IofQHelper
                 { 
+      NC::VectD q;
+      NC::VectD IofQ;  
+      switch(model)
+      {       
+      case Model::GPF:
+      { //GPF
+        std::cout << "Intialize GPF" << std::endl;
+        nc_assert(param.size()==7);
       
-      //Generate vector of data q and IofQ
-      double q_min = 0.05;
-      int sampling =  std::abs(1- std::log10(q_min))*10000;
-      NC::VectD q = NC::logspace(std::log10(q_min),1,sampling);
-      NC::VectD IofQ = q;
-      if (model == 2) { //GPF
+        double A=param.at(0);
+        double s=param.at(1);
+        double rg=param.at(2);
+        double m=param.at(3);
+        double p=param.at(4);
+        double Qmin=param.at(5);
+        double Q1=param.at(6);
 
-        double A=p0;
-        double s=p1;
-        double rg=p2;
-        double m=p3;
-        double p=p4;
+        //Generate vector of data q and IofQ
+
+        int sampling =  std::abs(1-std::log10(Qmin))*10000;
+        q = NC::logspace(std::log10(Qmin),1,sampling);
+        IofQ = q;
         //Q1 is when IofQ stops being evaluated as power law and Guinier starts (maybe parameter?)
-        double Q1=0.016;
         NCrystal::VectD::iterator it_q1;
-        if (Q1>q_min){
+        if (Q1>Qmin){
           it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
           //Approximation valid as long as we have high sampling. Otherwise interpolation needed
           if (it_q1==IofQ.end()) 
@@ -238,9 +279,8 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
           std::for_each(IofQ.begin(),it_q1,
                         [C,p](double &x) { x = C*std::pow(x,-p);}
                         ); 
-
         } else {
-          std::cout << "Given Q_min smaller then Q1. No low-q power law implemented (see the plugin readme for more info)\n"; 
+          std::cout << "Given Q_min greater then Q1. No low-q power law implemented (see the plugin readme for more info)\n"; 
           it_q1 = IofQ.begin();
         }
         //evaluate Q2 where IofQ stops being evaluated as Guinier and Porod starts
@@ -261,13 +301,21 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
         std::for_each(it_q2,IofQ.end(),
                       [B,m](double &x) { x = B*std::pow(x,-m);}
                       );
-      } else if (model == 1) {
-        double A1=p0;
-        double b1=p1;
-        double A2=p2;
-        double b2=p3;
-        double Q0=p4;
-
+        break;        
+      } 
+      case Model::PPF: 
+      {
+        // IT IS NOT ACTUALLY USED; WHAT TO DO WITH IT?
+        nc_assert(param.size()==5);
+        double A1=param.at(0);
+        double b1=param.at(1);
+        double A2=param.at(2);
+        double b2=param.at(3);
+        double Q0=param.at(4);
+        double q_min = std::log10(1e-6);
+        int sampling =  std::abs(1-q_min)*10000;
+        q = NC::logspace(q_min,1,sampling);
+        IofQ = q;
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
         if (it_q0==IofQ.end()) 
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q0 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
@@ -277,27 +325,17 @@ NCP::PhysicsModel::PhysicsModel(int model, double p0, double p1, double p2, doub
                       ); 
         std::for_each(it_q0,IofQ.end(),
                       [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
-                      );    
-      } else {
-        NCRYSTAL_THROW2(LogicError,"Bad internal state in costructor for model SANSND plugin");
-      }
-      //Initialize the helper        
-      NC::IofQHelper helper(q,IofQ);
-      return helper; })()){
-        //::cout<<"call to constructor for 1 and 2"<<std::endl;
-        //std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
-      };
-
-NCP::PhysicsModel::PhysicsModel(int model, double mono_R)
-    : m_model(model),
-      m_mono_R(mono_R),
-      m_helper(([mono_R]() -> NC::IofQHelper
-                {              
-        //Generate vector of data q and IofQ
+                      ); 
+        break;
+      } 
+      case Model::HSFBA:
+      {
+        nc_assert(param.size()==1);
+        double mono_R = param.at(0);
         double q_min = std::log10(1e-6);
         int sampling =  std::abs(1-q_min)*10000;
-        NC::VectD q = NC::logspace(q_min,1,sampling);
-        NC::VectD IofQ = q;
+        q = NC::logspace(q_min,1,sampling);
+        IofQ = q;
         double b = 6.646E-05;  // [AA] Carbon coherent scattering length
         double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
         double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
@@ -314,191 +352,64 @@ NCP::PhysicsModel::PhysicsModel(int model, double mono_R)
                           I += std::pow(x, -6) * osc_term / Nc * 1e8;//# convert to barn
                           x = physical_constant* I ;
                           }
-                        ); 
-        //Initialize the helper        
-        NC::IofQHelper helper(q,IofQ);
-        return helper;
-         })())
-{
-  //std::cout<<"call to constructor for 3"<<std::endl;
-  nc_assert(m_model == 3);
-};
-
-NCP::PhysicsModel::PhysicsModel(int model, std::string filename)
-    : m_model(model),
-      m_helper(([model,filename]() -> NC::IofQHelper
-                {           
-                           //std::cout<<"call to constructor for 3 + filename"<<std::endl;
-        nc_assert(model == 3);
-        // read R distribution information
-        NC::VectD Rs,freq;
-        std::string root_rel = "data/";
-        std::string rel_path = root_rel + filename;
-        std::ifstream input_file(rel_path);
-        if (input_file)
-        {
-          double temp_x, temp_y;
-          std::string line;
-          while (std::getline(input_file, line))
-          {
-            std::istringstream iss(line);
-            iss >> temp_x >> temp_y;
-            Rs.push_back(temp_x);
-            freq.push_back(temp_y);
-          }
-        }
-        else
-        {
-          NCRYSTAL_THROW2(BadInput, rel_path << ": Invalid data file for the " << pluginNameUpperCase()
-                                            << " plugin");
-        }        
-         
-        //Generate vector of data q and IofQ
-        double q_min = std::log10(1e-6);
-        int sampling =  std::abs(1-q_min)*10000;
-        NC::VectD q = NC::logspace(q_min,1,sampling);
-        NC::VectD IofQ = q;
-        double b = 6.646E-05;  // [AA] Carbon coherent scattering length
-        double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
-        double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
-        std::for_each(IofQ.begin(),IofQ.end(),
-                        [Rs,freq,physical_constant](double &x) { 
-                          double R, f, osc_term, Nc;
-                          double I=0;
-                          for (size_t i = 0; i < Rs.size(); ++i)
-                          {
-                            R = Rs.at(i) * 10; // converto to AA
-                            nc_assert(R>0);
-                            f = freq.at(i);
-                            osc_term = (sin(x*R) - x*R * cos(x*R)) * (sin(x*R) - x*R * cos(x*R));
-                            //Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
-                            // Nc = V * n = 4/3*pi*R^3 * n
-                            Nc = 0.7420 * R * R * R;
-                            I += f * osc_term / Nc;
-                          }
-                          x = physical_constant * std::pow(x, -6) * I * 1e8 ;//# convert to barn
-                          }
-                        ); 
-        //Initialize the helper        
-        NC::IofQHelper helper(q,IofQ);
-        return helper;
-         })())
-{
- 
-};
+                        );       
+        break;
+      } 
+      default: 
+          NCRYSTAL_THROW2(LogicError,"Bad internal state in costructor for model SANSND plugin");
+      
+      }
+      //Initialize the helper 
+      NC::IofQHelper helper(q,IofQ);
+      return helper; })())
+      {
+          //::cout<<"call to constructor for 1 and 2"<<std::endl;
+          // std::cout<<"helper initialized: " << m_helper.has_value() <<std::endl;
+      };
 
 double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 {
-  //std::cout<<"call to calcCrossSection"<<std::endl;
-  //std::cout<<"m_model: " << m_model <<std::endl;
-  
+
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
-  //std::cout<<"k: " << k <<std::endl;
-  nc_assert(k!=0);
+  nc_assert(k != 0);
   double SANS_xs;
-  enum model_def
-  {
-    FILE,
-    PPF,
-    GPF,
-    HSFBA
-  };
+
   switch (m_model)
   {
-  case PPF:
+  case Model::PPF:
   {
-    if (m_param.has_value()){
-      double A1=m_param.value().at(0);
-      double b1=m_param.value().at(1);
-      double A2=m_param.value().at(2);
-      double b2=m_param.value().at(3);
-      double Q0=m_param.value().at(4);
-      //double corr_param = 5.4;
-      SANS_xs = (2*NC::kPi/(k*k))*(A1/(-b1+2)*std::pow(Q0,-b1+2) + A2/(-b2+2)*std::pow(2*k,-b2+2) - A2/(-b2+2)*std::pow(Q0,-b2+2));
-    } else {
-      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
-                                                                                                     << " plugin");
+    if (m_param.has_value())
+    {
+      double A1 = m_param.value().at(0);
+      double b1 = m_param.value().at(1);
+      double A2 = m_param.value().at(2);
+      double b2 = m_param.value().at(3);
+      double Q0 = m_param.value().at(4);
+      SANS_xs = (2 * NC::kPi / (k * k)) * (A1 / (-b1 + 2) * std::pow(Q0, -b1 + 2) + A2 / (-b2 + 2) * std::pow(2 * k, -b2 + 2) - A2 / (-b2 + 2) * std::pow(Q0, -b2 + 2));
     }
-    break;
-  }
-  case FILE:
-    {
-    if (m_helper.has_value() && m_norm.has_value())
-    {
-      nc_assert(k!=0);
-      SANS_xs = 2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
-    }
-    else
-    {
-      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized IofQHelper in xs sampling in the " << pluginNameUpperCase()
-                                                                                                     << " plugin");
-    }
-    break;
-  }
-  case GPF:
-  {
-    if (m_helper.has_value())
-    {
-      nc_assert(k!=0);
-      SANS_xs = 2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
-    }
-    else
-    {
-      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized IofQHelper in xs sampling in the " << pluginNameUpperCase()
-                                                                                                     << " plugin");
-    }
-    break;
-  }
-  case HSFBA:
-  {
-    // b = 6.646E-05;//[AA] <- Carbon coherent scattering length
-    // n = 0.1771471666666667;// [at/AA^3] <- Diamond atom density
-    // 32*pi^3*(nb)^2 = 1.375E-07 [1/AA^4]
-    //double physical_constant = 1.375E-07;
-    //SANS_xs = 0;
-    //double R, freq, _2kr, I;
-    /*if (m_R.has_value() && m_freq.has_value())
-    {
-      for (size_t i = 0; i < m_R.value().size(); ++i)
-      {
-        R = m_R.value().at(i) * 10; // converto to AA
-        nc_assert(R>0);
-        freq = m_freq.value().at(i);
-        _2kr = 2 * k * R;
-        I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
-        // Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
-        //  Nc = V * n = 4/3*pi*R^3 * n
-        double Nc = 0.7420 * R * R * R;
-        SANS_xs += freq * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
-      }
-      SANS_xs *= physical_constant;
-    }*/
-    
-    if (m_helper.has_value())
-    {
-      nc_assert(k!=0);
-      SANS_xs =  2*NC::kPi / ( k * k) * m_helper.value().calcQIofQIntegral(ekin);
-    }
-    /*
-    else if (m_mono_R.has_value())
-    {
-      R = m_mono_R.value() * 10; // converto to AA
-      nc_assert(R>0);
-      _2kr = 2 * k * R;
-      I = 0.25 * (1 - 1 / (_2kr * _2kr) + sin(2 * _2kr) / (_2kr * _2kr * _2kr) - sin(_2kr) * sin(_2kr) / (_2kr * _2kr * _2kr * _2kr));
-      // Determine the number of atoms in a diamond nanoparticle to normalize per-atoms
-      //  Nc = V * n = 4/3*pi*R^3 * n
-      double Nc = 0.7420 * R * R * R;
-      SANS_xs = physical_constant * std::pow(R, 6) / (k * k * R * R) * I / Nc * 1e+8; //[barn]
-    }*/
     else
     {
       NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
                                                                                                     << " plugin");
     }
     break;
-
+  }
+  case Model::FILE:
+  case Model::GPF:
+  case Model::HSFBA:
+  {
+    if (m_helper.has_value())
+    {
+      nc_assert(k != 0);
+      SANS_xs = 2 * NC::kPi / (k * k) * m_helper.value().calcQIofQIntegral(ekin);
+    }
+    else
+    {
+      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized IofQHelper in xs sampling in the " << pluginNameUpperCase()
+                                                                                                     << " plugin");
+    }
+    break;
   }
   default:
     NCRYSTAL_THROW2(LogicError, "Bad internal state for model in SANSND plugin");
@@ -508,47 +419,45 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 
 double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ekin) const
 {
-  //std::cout<<"call to sampleScatteringVector"<<std::endl;
   double Q;
-  enum model_def
-  {
-    FILE,
-    PPF,
-    GPF,
-    HSFBA
-  };
-  //std::cout<<"m_model: " << m_model <<std::endl;
   switch (m_model)
   {
-  case PPF:
+  case Model::PPF:
   {
     double rand = rng.generate();
     double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
     // sample a random scattering vector Q from the inverse PPF CDF (see plugin readme)
-    double A1 = 132.869;
-    double b1 = 1.33605;
-    double A2 = 0.0519763;
-    double b2 = 3.97314;
-    double Q0 = 0.0510821;
-    double corr_param = 5.4;
-    double xs = calcCrossSection(neutron_ekin);
-    nc_assert(k!=0);
-    nc_assert(xs!=0);
-    double ratio_sigma = (  2*NC::kPi / ( k * k) ) / xs ; // cross section over total cross section ratio
-    double CDF_Q0 = (A1 * std::pow(Q0, -b1 + 2) / (-b1 + 2)) * ratio_sigma;
-    if (rand < CDF_Q0)
+    if (m_param.has_value())
     {
-      Q = std::pow(((-b1 + 2) * rand / A1) / ratio_sigma, 1 / (-b1 + 2));
+      double A1 = m_param.value().at(0);
+      double b1 = m_param.value().at(1);
+      double A2 = m_param.value().at(2);
+      double b2 = m_param.value().at(3);
+      double Q0 = m_param.value().at(4);
+      double xs = calcCrossSection(neutron_ekin);
+      nc_assert(k != 0);
+      nc_assert(xs != 0);
+      double ratio_sigma = (2 * NC::kPi / (k * k)) / xs; // cross section over total cross section ratio
+      double CDF_Q0 = (A1 * std::pow(Q0, -b1 + 2) / (-b1 + 2)) * ratio_sigma;
+      if (rand < CDF_Q0)
+      {
+        Q = std::pow(((-b1 + 2) * rand / A1) / ratio_sigma, 1 / (-b1 + 2));
+      }
+      else
+      {
+        Q = std::pow((rand / ratio_sigma - (A1 / (-b1 + 2)) * std::pow(Q0, -b1 + 2) + (A2 / (-b2 + 2)) * std::pow(Q0, -b2 + 2)) * (-b2 + 2) / A2, 1 / (-b2 + 2));
+      }
     }
     else
     {
-      Q = std::pow((rand / ratio_sigma - (A1 / (-b1 + 2)) * std::pow(Q0, -b1 + 2) + (A2 / (-b2 + 2)) * std::pow(Q0, -b2 + 2)) * (-b2 + 2) / A2, 1 / (-b2 + 2));
+      NCRYSTAL_THROW2(LogicError, "Attempt to use not-initialized parameter in xs sampling in the " << pluginNameUpperCase()
+                                                                                                    << " plugin");
     }
     break;
   }
-  case FILE:
-  case HSFBA:
-  case GPF:
+  case Model::FILE:
+  case Model::HSFBA:
+  case Model::GPF:
   {
     if (m_helper.has_value())
     {
@@ -562,7 +471,6 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
     }
     break;
   }
-
   default:
     NCRYSTAL_THROW2(LogicError, "Bad internal state for model in SANSND plugin");
   }

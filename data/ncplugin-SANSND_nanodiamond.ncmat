@@ -88,9 +88,5 @@ NCMAT v5
 @CUSTOM_SANSND
 # custom physics that enables SANS for nanodiamond particles
 2.0                                   # plugin version
-#0
-#teshi_extended.dat
-#2
-#66 1.5 14.64 4.15 2.13
-1
+PPF
 132.869 1.33605 0.0519763 3.97314 0.0510821   

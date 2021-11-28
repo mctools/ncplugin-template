@@ -140,29 +140,29 @@ dummyal="""NCMAT v5
     .265855 .300494 .41769 .385856 .222808 .130473 .0823366 .0292034 .0125285 0
 """
 
-customsection='@CUSTOM_%s\n  %g\n %d\n %g %g %g %g %g'% ( "SANSND", 
+customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
                                         version,
-                                        1,
+                                        "PPF",
                                         A1,b1,A2,b2,Q0 )
 
-customsection2='@CUSTOM_%s\n  %g\n %d\n %g %g %g %g %g'% ( "SANSND", 
+customsection2='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g %g'% ( "SANSND", 
                                         version,
-                                        2,
-                                        A,s,rg,m,p)
+                                        "GPF",
+                                        A,s,rg,m,p,0.05)
 
-customsection3='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
+customsection3='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
                                        version,
-                                       0,
+                                       "FILE",
                                       "teshi.dat")
 
-customsection4='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
+customsection4='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
                                        version,
-                                       3,
+                                       "HSFBA",
                                         "teshi_R_dist")
 
-customsection5='@CUSTOM_%s\n  %g\n %d\n %s'% ( "SANSND", 
+customsection5='@CUSTOM_%s\n  %g\n %s\n %s'% ( "SANSND", 
                                        version,
-                                        3,
+                                        "HSFBA",
                                         2.5 )
 #customsection6='@CUSTOM_%s\n  %g\n %s\n %g'% ( "SANSND", 
 #                                        version,

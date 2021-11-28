@@ -26,15 +26,11 @@ namespace NCPluginNamespace {
 
     static bool isApplicable( const NC::Info& );
     static PhysicsModel createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
-    
-    //Constructor gets the filename of the input data file:
-    PhysicsModel(std::string filename, double norm = 1 );
-    //Constructor gets the models string and the param:
-    PhysicsModel( int model, double p0, double p1, double p2, double p3, double p4 );
-    //Constructor gets the models string and nanoparticle radius R :
-    PhysicsModel( int model, double mono_R);
-    //Constructor gets the models string and the dist R file:
-    PhysicsModel( int model, std::string filename );
+    enum class Model : unsigned { FILE=0, PPF=1, GPF=2, HSFBA=3 };
+    //Constructor gets the models string and vector of parameters:
+    PhysicsModel( Model model, NC::VectD param );
+    //Constructor gets the models string and the dist R file or input I(q) file:
+    PhysicsModel( Model model, std::string filename );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -48,14 +44,9 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    int m_model;
+    Model m_model;
     NC::Optional<NC::VectD> m_param;
     NC::Optional<NC::IofQHelper> m_helper;
-    //for theoretical NP_FBA
-    NC::Optional<double> m_mono_R;
-    //NC::Optional<std::pair<NC::VectD,NC::VectD>> m_R_freq;
-    //for reading from file
-    NC::Optional<double> m_norm;
   };
 
 }
