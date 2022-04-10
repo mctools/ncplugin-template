@@ -40,22 +40,15 @@ const char * NCP::PluginFactory::name() const noexcept
 
 NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 {
-  if ( ! SansModelPicker::isApplicable(*globalCreateInfo(cfg)) )
+  if ( ! ( cfg.get_sans() && SansModelPicker::isApplicable(cfg.info()) ) )
     return NC::Priority::Unable;
   return NC::Priority{999};
 }
 
-NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::MatCfg& cfg ) const
+NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
 {
-  // cfg.get_packfact()
-  auto sc_ourmodel = NC::makeSO<PluginScatter>(SansModelPicker::createFromInfo(globalCreateInfo(cfg) ));
-  return sc_ourmodel;
-
-  //fixme: to be enabled again
-  // auto cfg2 = cfg.clone();
-  // auto sc_std = globalCreateScatter(cfg2);
-  //[Comment from TK: No need to clone cfg as cfg2 if you are not going to change any parameters.]
-  //
-  // // Combine and return:
-  // return combineProcs( sc_std, sc_ourmodel );
+  auto sc_ourmodel = NC::makeSO<PluginScatter>( SansModelPicker::createFromInfo(cfg.info()) );
+  auto sc_std = globalCreateScatter( cfg )
+  //NOTE from TK: To get ONLY the sans component when plotting etc., you can simply put "bla.ncmat;comp=sans".
+  return combineProcs( sc_std, sc_ourmodel );
 }

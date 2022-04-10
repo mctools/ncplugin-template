@@ -95,4 +95,4 @@ echo
 echo "If you wish to save space, you can remove the build leftovers with:"
 echo "   rm -rf ${ncbase}/bld"
 echo
-echo "This NCrystal installation will be automatically activated when you source testcode/util/bootstrap.sh"
+echo "This NCrystal installation will be automatically activated when you source testcode/utils/bootstrap.sh"
