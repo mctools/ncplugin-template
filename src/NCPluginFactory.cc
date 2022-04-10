@@ -47,7 +47,7 @@ const char * NCP::PluginFactory::name() const noexcept
 //                                                                              //
 //////////////////////////////////////////////////////////////////////////////////
 
-NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
+NC::Priority NCP::PluginFactory::query( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   //Must return value >0 if we should do something, and a value higher than
   //100 means that we take precedence over the standard NCrystal factory:
@@ -57,7 +57,7 @@ NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
 
-  if ( ! PhysicsModel::isApplicable( globalCreateInfo(cfg)) )
+  if ( ! PhysicsModel::isApplicable( cfg.info() ) )
     return NC::Priority::Unable;
 
   //Ok, all good. Tell the framework that we want to deal with this, with a
@@ -65,19 +65,18 @@ NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
   return NC::Priority{999};
 }
 
-NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::MatCfg& cfg ) const
+NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   //Ok, we are selected as the provider! First create our own scatter model:
 
-  auto sc_ourmodel = NC::makeSO<PluginScatter>(PhysicsModel::createFromInfo(globalCreateInfo(cfg)));
+  auto sc_ourmodel = NC::makeSO<PluginScatter>( PhysicsModel::createFromInfo( cfg.info() ) );
 
   //Now we just need to combine this with all the other physics
   //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for
   //incoherent-elastic physics of course since we are now dealing with that
   //ourselves:
-  auto cfg2 = cfg.clone();
-  cfg2.set_incoh_elas(false);
-  auto sc_std = globalCreateScatter(cfg2);
+
+  auto sc_std = globalCreateScatter( cfg.modified("incoh_elas=0") );
 
   //Combine and return:
   return combineProcs( sc_std, sc_ourmodel );

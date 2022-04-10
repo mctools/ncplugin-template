@@ -80,7 +80,7 @@ Usage:
 
   ncpluginbuild (--clear|-c) : clean bld output, environment variables and even
                                delete the ncpluginbuild command. (you must
-                               ". testcode/util/bootstrap.sh" to get it back
+                               ". testcode/utils/bootstrap.sh" to get it back
                                again).
 
   ncpluginbuild (--help|-h)  : Print these usage instructions
