@@ -17,7 +17,7 @@ NCMAT v3
 #
 #Finally here is "magic comment" which ensures that NCrystal will model this as
 #a diamond powder with lower density than Diamond:
-#NCRYSTALMATCFG[packfact=0.1828]
+#NCRYSTALMATCFG[density=0.642781468gcm3]
 @CELL
   lengths 3.56679 3.56679 3.56679
   angles 90 90 90
