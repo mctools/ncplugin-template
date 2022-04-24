@@ -79,7 +79,7 @@ endif()
 
 #Standard build, need NCrystal as dependency:
 
-find_package(NCrystal 2.9.92 REQUIRED)#NB: v2.9.92 is RC2 for v3.0.0 so this essentially needs NCrystal v3.0.0
+find_package(NCrystal 3.0.0 REQUIRED)
 
 if ( NCPLUGIN_DEVMODE )
   #Compile with very strict C++11 options during normal development (this gives
