@@ -369,6 +369,8 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
 
 double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
 {
+  if ( !( neutron_ekin > 0.0 ) )
+    return 0.0;
 
   NC::NeutronEnergy ekin(neutron_ekin);
   double k = NC::k2Pi / NC::ekin2wl(neutron_ekin); // wavevector
@@ -414,6 +416,10 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
   default:
     NCRYSTAL_THROW2(LogicError, "Bad internal state for model in SANSND plugin");
   }
+
+  if ( SANS_xs < 0.0 )
+    SANS_xs = 0.0;//Added by TK since the code above seems to give negative results!! Probably this fix hides the real underlying issue.
+
   return SANS_xs;
 }
 
@@ -489,9 +495,14 @@ NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent(NC::RNG &r
 
   // Implement our actual model here:
   result.ekin_final = neutron_ekin; // Elastic
-  double Q = sampleScatteringVector(rng, neutron_ekin);
   double ksquared = NC::k4PiSq * NC::ekin2wlsqinv(neutron_ekin);
-  result.mu = 1 - 0.5 * (Q * Q / ksquared);
+  if ( ! (ksquared>0.0) ) {
+    result.mu = 1;
+    return result;
+  }
+  double Q = sampleScatteringVector(rng, neutron_ekin);
+  result.mu = NC::ncclamp( 1 - 0.5 * (Q * Q / ksquared), -1.0, 1.0 );
+  nc_assert_always(!std::isnan(result.mu));
 
   return result;
 }
