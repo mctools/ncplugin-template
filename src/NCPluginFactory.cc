@@ -38,7 +38,7 @@ const char * NCP::PluginFactory::name() const noexcept
   return NCPLUGIN_NAME_CSTR "Factory";
 }
 
-NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
+NC::Priority NCP::PluginFactory::query( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   if ( ! ( cfg.get_sans() && SansModelPicker::isApplicable(cfg.info()) ) )
     return NC::Priority::Unable;
@@ -48,7 +48,7 @@ NC::Priority NCP::PluginFactory::query( const NC::MatCfg& cfg ) const
 NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   auto sc_ourmodel = NC::makeSO<PluginScatter>( SansModelPicker::createFromInfo(cfg.info()) );
-  auto sc_std = globalCreateScatter( cfg )
+  auto sc_std = globalCreateScatter( cfg );
   //NOTE from TK: To get ONLY the sans component when plotting etc., you can simply put "bla.ncmat;comp=sans".
   return combineProcs( sc_std, sc_ourmodel );
 }

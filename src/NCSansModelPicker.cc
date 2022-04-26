@@ -11,7 +11,7 @@ bool NCP::SansModelPicker::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::SansIsotropic NCP::SansModelPicker::createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info)
+NCP::SansIsotropic NCP::SansModelPicker::createFromInfo( const NC::Info& info)
 {
   auto iq = SansModelPicker(info);
   return SansIsotropic(iq.getQ(), iq.getI());

@@ -23,7 +23,7 @@ namespace NCPluginNamespace {
     //objects (the createFromInfo function will raise BadInput exceptions in
     //case of syntax errors in the @CUSTOM_ section data):
     static bool isApplicable( const NC::Info& );
-    static SansIsotropic createFromInfo( NCrystal::shared_obj<const NCrystal::Info> info ); //will raise BadInput in case of syntax errors
+    static SansIsotropic createFromInfo( const NC::Info& info ); //will raise BadInput in case of syntax errors
 
   private:
     SansModelPicker(const NC::Info& info);
