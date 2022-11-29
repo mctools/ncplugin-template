@@ -1,16 +1,18 @@
-#include "NCPhysicsModel.hh"
+#include "NCCrystallineTexture.hh"
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
 
-bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
+//texture model to be added
+
+bool NCP::CrystallineTexture::isApplicable( const NC::Info& info )
 {
   //Accept if input is NCMAT data with @CUSTOM_<pluginname> section:
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
+NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info& info )
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error
@@ -47,7 +49,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
   return PhysicsModel(sigma,lambda_cutoff);
 }
 
-NCP::PhysicsModel::PhysicsModel( double sigma, double lambda_cutoff )
+NCP::CrystallineTexture::CrystallineTexture( double sigma, double lambda_cutoff )
   : m_sigma(sigma),
     m_cutoffekin(NC::wl2ekin(lambda_cutoff))
 {
@@ -62,14 +64,14 @@ NCP::PhysicsModel::PhysicsModel( double sigma, double lambda_cutoff )
   nc_assert( m_cutoffekin > 0.0);
 }
 
-double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
+double NCP::CrystallineTexture::calcCrossSection( double neutron_ekin ) const
 {
   if ( neutron_ekin > m_cutoffekin )
     return m_sigma;
   return 0.0;
 }
 
-NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
+NCP::CrystallineTexture::ScatEvent NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
   ScatEvent result;
 
