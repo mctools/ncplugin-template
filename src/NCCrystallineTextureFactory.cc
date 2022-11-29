@@ -1,6 +1,6 @@
 
-#include "NCPluginFactory.hh"
-#include "NCPhysicsModel.hh"
+#include "NCCrystallineTextureFactory.hh"
+#include "NCCrystallineTexture.hh"
 #include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
 
 namespace NCPluginNamespace {
@@ -12,7 +12,7 @@ namespace NCPluginNamespace {
     //Scatter class.
 
     const char * name() const noexcept override { return NCPLUGIN_NAME_CSTR "Model"; }
-    PluginScatter( PhysicsModel && pm ) : m_pm(std::move(pm)) {}
+    PluginScatter( CrystallineTexture && pm ) : m_pm(std::move(pm)) {}
 
     NC::CrossSect crossSectionIsotropic(NC::CachePtr&, NC::NeutronEnergy ekin) const override
     {
@@ -31,7 +31,7 @@ namespace NCPluginNamespace {
 
 }
 
-const char * NCP::PluginFactory::name() const noexcept
+const char * NCP::CrystallineTextureFactory::name() const noexcept
 {
   //Factory name. Keep this standardised form please:
   return NCPLUGIN_NAME_CSTR "Factory";
@@ -47,7 +47,7 @@ const char * NCP::PluginFactory::name() const noexcept
 //                                                                              //
 //////////////////////////////////////////////////////////////////////////////////
 
-NC::Priority NCP::PluginFactory::query( const NC::FactImpl::ScatterRequest& cfg ) const
+NC::Priority NCP::CrystallineTextureFactory::query( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   //Must return value >0 if we should do something, and a value higher than
   //100 means that we take precedence over the standard NCrystal factory:
@@ -57,7 +57,7 @@ NC::Priority NCP::PluginFactory::query( const NC::FactImpl::ScatterRequest& cfg 
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
 
-  if ( ! PhysicsModel::isApplicable( cfg.info() ) )
+  if ( ! CrystallineTexture::isApplicable( cfg.info() ) )
     return NC::Priority::Unable;
 
   //Ok, all good. Tell the framework that we want to deal with this, with a
@@ -65,11 +65,11 @@ NC::Priority NCP::PluginFactory::query( const NC::FactImpl::ScatterRequest& cfg 
   return NC::Priority{999};
 }
 
-NC::ProcImpl::ProcPtr NCP::PluginFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
+NC::ProcImpl::ProcPtr NCP::CrystallineTextureFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
 {
   //Ok, we are selected as the provider! First create our own scatter model:
 
-  auto sc_ourmodel = NC::makeSO<PluginScatter>( PhysicsModel::createFromInfo( cfg.info() ) );
+  auto sc_ourmodel = NC::makeSO<PluginScatter>( CrystallineTexture::createFromInfo( cfg.info() ) );
 
   //Now we just need to combine this with all the other physics
   //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for
