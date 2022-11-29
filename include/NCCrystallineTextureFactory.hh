@@ -1,5 +1,5 @@
-#ifndef NCPlugin_Factory_hh
-#define NCPlugin_Factory_hh
+#ifndef NCPlugin_CrystallineTextureFactory_hh
+#define NCPlugin_CrystallineTextureFactory_hh
 
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
@@ -10,7 +10,7 @@ namespace NCPluginNamespace {
   //Factory which implements logic of how the physics model provided by the
   //plugin should be combined with existing models in NCrystal:
 
-  class PluginFactory final : public NC::FactImpl::ScatterFactory {
+  class CrystallineTextureFactory final : public NC::FactImpl::ScatterFactory {
   public:
     //ScatFact = Factory<FactoryType::Scatter,ProcImpl::Process,ScatterRequest>
     const char * name() const noexcept override;
