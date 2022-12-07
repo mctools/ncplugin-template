@@ -26,7 +26,7 @@ namespace NCPluginNamespace {
     }
 
   private:
-    PhysicsModel m_pm;
+    CrystallineTexture m_pm;
   };
 
 }
