@@ -46,7 +46,7 @@ NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info&
                      <<" section (should be two positive floating point values)" );
 
   //Parsing done! Create and return our model:
-  return PhysicsModel(sigma,lambda_cutoff);
+  return CrystallineTexture(sigma,lambda_cutoff);
 }
 
 NCP::CrystallineTexture::CrystallineTexture( double sigma, double lambda_cutoff )
