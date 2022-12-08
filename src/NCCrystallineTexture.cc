@@ -67,15 +67,24 @@ NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info&
        || !(preferred_orientation.mag()>0) || !(p1>0.0) || !(f1==1.0) )
     NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
                      <<" PO (should not be [0,0,0]) p1 (should be one positive floating point value) f1 (should be 1, only one PO supported in this moment)" );
+    
+  //Getting the volume, number of atoms and hkl list
+  double volume = info.getStructureInfo().volume;
+  int n_atoms = info.getStructureInfo().n_atoms;
+  const NCrystal::HKLList& hkl_list = info.hklList();
 
   //Parsing done! Create and return our model:
-  return CrystallineTexture(preferred_orientation,p1,f1);
+  return CrystallineTexture(preferred_orientation,p1,f1,hkl_list);
 }
 
-NCP::CrystallineTexture::CrystallineTexture( NCrystal::Vector& preferred_orientation, double p1, double f1 )
+NCP::CrystallineTexture::CrystallineTexture( NCrystal::Vector& preferred_orientation, double p1, double f1,
+                                             double volume, int n_atoms, const NCrystal::HKLList& hkl_list )
   : m_preferred_orientation(preferred_orientation),
     m_p1(p1),
-    m_f1(f1)
+    m_f1(f1),
+    m_volume(volume),
+    m_n_atoms(n_atoms),
+    m_hkl_list(hkl_list)
 {
   //Important note to developers who are using the infrastructure in the
   //testcode/ subdirectory: If you change the number or types of the arguments
@@ -87,20 +96,22 @@ NCP::CrystallineTexture::CrystallineTexture( NCrystal::Vector& preferred_orienta
   nc_assert( preferred_orientation.mag() > 0.0 );
   nc_assert( m_p1 > 0.0 );
   nc_assert( m_f1 > 0.0 );
+  nc_assert( m_volume > 0.0 );
+  nc_assert( m_n_atoms > 0 );
 }
 
-double NCP::CrystallineTexture::calcCrossSection( const NC::Info& info, double neutron_ekin ) const
+double NCP::CrystallineTexture::calcCrossSection( double neutron_ekin ) const
 {
   double xs_in_barns;
-  const double xsectfact = 0.5 / (info.getStructureInfo().volume * info.getStructureInfo().n_atoms);
+  const double xsectfact = 0.5 / (m_volume * m_n_atoms);
 
-  for ( auto& hkl : info.hklList()) {
+  for ( auto& hkl : m_hkl_list ) {
     const double wl = 2.0 * hkl.dspacing;
     const double E = NC::wl2ekin(wl);
     if ( E <= neutron_ekin ) {
-      auto rec_lat = NCrystal::getReciprocalLatticeRot( info.getStructureInfo() );
-      NCrystal::Vector& waveVector = rec_lat * hkl;
-      double pddf_hkl = calc_pddf( m_preferred_orientation, waveVector, m_p1); // March-Dollase texture model
+      //auto rec_lat = NCrystal::getReciprocalLatticeRot( info.getStructureInfo() );
+      //NCrystal::Vector& waveVector = rec_lat * hkl;
+      double pddf_hkl = calc_pddf( m_preferred_orientation, hkl.waveVector, m_p1); // March-Dollase texture model
       const double fdm = hkl.fsquared * hkl.multiplicity * hkl.dspacing * pddf_hkl;
       xs_in_barns += fdm;
     }
