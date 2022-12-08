@@ -35,10 +35,11 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    CrystallineTexture( NCrystal::Vector& preferred_orientation, double p1, double f1 );
+    CrystallineTexture( NCrystal::Vector& preferred_orientation, double p1, double f1,
+                        double volume, int n_atoms, const NCrystal::HKLList& hkl_list );
 
     //Provide cross sections for a given neutron:
-    double calcCrossSection( const NC::Info& info, double neutron_ekin ) const;
+    double calcCrossSection( double neutron_ekin ) const;
 
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
@@ -50,6 +51,9 @@ namespace NCPluginNamespace {
     NCrystal::Vector& m_preferred_orientation;
     double m_p1;
     double m_f1;
+    double m_volume;
+    int m_n_atoms;
+    const NCrystal::HKLList& m_hkl_list;
   };
 
 }
