@@ -5,6 +5,10 @@
                                           //public API headers, sets up
                                           //namespaces and aliases)
 #include "NCrystal/internal/NCVector.hh"
+#include "NCrystal/internal/NCOrientUtils.hh"
+#include "NCrystal/internal/NCMath.hh"
+#include "NCrystal/NCDefs.hh"
+#include "NCrystal/internal/NCMatrix.hh"
 
 namespace NCPluginNamespace {
 
@@ -35,8 +39,10 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    CrystallineTexture( NCrystal::Vector& preferred_orientation, double p1, double f1,
-                        double volume, int n_atoms, const NCrystal::HKLList& hkl_list );
+    CrystallineTexture( NCrystal::Vector& preferred_orientation1, double p1, double f1,
+                        NCrystal::Vector& preferred_orientation2, double p2, double f2,
+                        const NCrystal::StructureInfo& struct_info,
+                        const NCrystal::HKLList& hkl_list );
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -48,11 +54,13 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    NCrystal::Vector& m_preferred_orientation;
+    NCrystal::Vector& m_preferred_orientation1;
     double m_p1;
     double m_f1;
-    double m_volume;
-    int m_n_atoms;
+    NCrystal::Vector& m_preferred_orientation2;
+    double m_p2;
+    double m_f2;
+    const NCrystal::StructureInfo& m_struct_info;
     const NCrystal::HKLList& m_hkl_list;
   };
 
