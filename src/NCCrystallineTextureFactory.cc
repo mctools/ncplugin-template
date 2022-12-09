@@ -51,8 +51,8 @@ NC::Priority NCP::CrystallineTextureFactory::query( const NC::FactImpl::ScatterR
 {
   //Must return value >0 if we should do something, and a value higher than
   //100 means that we take precedence over the standard NCrystal factory:
-  if (!cfg.get_coh_elas())
-    return NC::Priority::Unable;//coherent-elastic disabled, never do anything.
+  //if (!cfg.get_coh_elas())
+  //  return NC::Priority::Unable;//coherent-elastic disabled, never do anything.
 
   //Ok, we might be applicable. Load input data and check if is something we
   //want to handle:
