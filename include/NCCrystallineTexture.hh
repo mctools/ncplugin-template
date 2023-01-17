@@ -4,11 +4,10 @@
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
                                           //namespaces and aliases)
+#include "NCrystal/NCSCOrientation.hh"
+#include "NCrystal/internal/NCRotMatrix.hh"
 #include "NCrystal/internal/NCVector.hh"
-#include "NCrystal/internal/NCOrientUtils.hh"
-#include "NCrystal/internal/NCMath.hh"
-#include "NCrystal/NCDefs.hh"
-#include "NCrystal/internal/NCMatrix.hh"
+#include "NCrystal/internal/NCPlaneProvider.hh"
 
 namespace NCPluginNamespace {
 
@@ -28,40 +27,48 @@ namespace NCPluginNamespace {
     //case of syntax errors in the @CUSTOM_ section data):
 
     static bool isApplicable( const NC::Info& );
-    static CrystallineTexture createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
+    static CrystallineTexture createFromInfo( const NC::SCOrientation&, const NC::Info&, NC::PlaneProvider * = nullptr );//will raise BadInput in case of syntax errors
 
     //The crystalline texuture or preferred orientation correction is taken into account by introducing 
-    //the cylindrically symmetric Pole-Density Distribution Function (PDDF) P_hkl(theta_hkl) which 
-    //depends on the orientation angle theta_hkl, i.e., angle between the preferred orientation and
-    //the plan vectors tau_hkl.
+    //the cylindrically symmetric Pole-Density Distribution Function (PDDF) or preferred orientation
+    //distribution function P_hkl(lambda, theta_hkl) which depends on the orientation angle theta_hkl,
+    //i.e., angle between the preferred orientation and the plan vectors hkl.
     //Various types of PDDFs are reported in the literature.
-    //As a first try, we investigate the March-Dollase model.
+    //As a first try, we investigate the modified March-Dollase model (Sato 2011).
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    CrystallineTexture( NCrystal::Vector& preferred_orientation1, double p1, double f1,
-                        NCrystal::Vector& preferred_orientation2, double p2, double f2,
+    CrystallineTexture( const NC::SCOrientation&,
+                        const NCrystal::Vector& preferred_orientation1, double R1, double f1,
+                        const NCrystal::Vector& preferred_orientation2, double R2, double f2,
                         const NCrystal::StructureInfo& struct_info,
-                        const NCrystal::HKLList& hkl_list );
+                        NC::PlaneProvider * std_pp = nullptr );
 
     //Provide cross sections for a given neutron:
-    double calcCrossSection( double neutron_ekin ) const;
+    double calcCrossSection( NC::NeutronEnergy, const NC::NeutronDirection&) const;
 
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
-    struct ScatEvent { double ekin_final, mu; };
-    ScatEvent sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const;
+
+    NC::ScatterOutcome sampleScatteringEvent( NC::RNG& rng, NC::NeutronEnergy, const NC::NeutronDirection& ) const;
 
   private:
     //Data members:
-    NCrystal::Vector& m_preferred_orientation1;
-    double m_p1;
+    NCrystal::Vector m_preferred_orientation1;
+    double m_R1;
     double m_f1;
-    NCrystal::Vector& m_preferred_orientation2;
-    double m_p2;
+    NCrystal::Vector m_preferred_orientation2;
+    double m_R2;
     double m_f2;
-    const NCrystal::StructureInfo& m_struct_info;
-    const NCrystal::HKLList& m_hkl_list;
+    struct HKLPlane {
+      NCrystal::Vector hkl; //vector (h,k,l)
+      double d_hkl; //dspacing
+      double strength;//dspacing*fsq*xsectfact
+    };
+    std::vector<HKLPlane> m_hklPlanes;
+    NCrystal::RotMatrix m_lab2cry;
+    NCrystal::RotMatrix m_reclat;
+
   };
 
 }
