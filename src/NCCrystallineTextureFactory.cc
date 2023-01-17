@@ -1,11 +1,11 @@
 
 #include "NCCrystallineTextureFactory.hh"
 #include "NCCrystallineTexture.hh"
-#include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
+//#include "NCrystal/internal/NCRandUtils.hh" // for randDirectionGivenScatterMu
 
 namespace NCPluginNamespace {
 
-  class PluginScatter final : public NC::ProcImpl::ScatterIsotropicMat {
+  class PluginScatter final : public NC::ProcImpl::ScatterAnisotropicMat {
   public:
 
     //The factory wraps our custom PhysicsModel helper class in an NCrystal API
@@ -14,15 +14,14 @@ namespace NCPluginNamespace {
     const char * name() const noexcept override { return NCPLUGIN_NAME_CSTR "Model"; }
     PluginScatter( CrystallineTexture && pm ) : m_pm(std::move(pm)) {}
 
-    NC::CrossSect crossSectionIsotropic(NC::CachePtr&, NC::NeutronEnergy ekin) const override
+    NC::CrossSect crossSection(NC::CachePtr&, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab ) const override
     {
-      return NC::CrossSect{ m_pm.calcCrossSection(ekin.dbl()) };
+      return NC::CrossSect{ m_pm.calcCrossSection(ekin, ndirlab) };
     }
 
-    NC::ScatterOutcomeIsotropic sampleScatterIsotropic(NC::CachePtr&, NC::RNG& rng, NC::NeutronEnergy ekin ) const override
+    NC::ScatterOutcome sampleScatter(NC::CachePtr&, NC::RNG& rng, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab) const override
     {
-      auto outcome = m_pm.sampleScatteringEvent( rng, ekin.dbl() );
-      return { NC::NeutronEnergy{outcome.ekin_final}, NC::CosineScatAngle{outcome.mu} };
+      return m_pm.sampleScatteringEvent( rng, ekin, ndirlab );
     }
 
   private:
@@ -69,7 +68,9 @@ NC::ProcImpl::ProcPtr NCP::CrystallineTextureFactory::produce( const NC::FactImp
 {
   //Ok, we are selected as the provider! First create our own scatter model:
 
-  auto sc_ourmodel = NC::makeSO<PluginScatter>( CrystallineTexture::createFromInfo( cfg.info() ) );
+  auto sc_pp = createStdPlaneProvider( cfg.infoPtr() );
+  NC::SCOrientation sco = cfg.createSCOrientation();
+  auto sc_ourmodel = NC::makeSO<PluginScatter>( CrystallineTexture::createFromInfo( sco, cfg.info(), sc_pp.get() ) );
 
   //Now we just need to combine this with all the other physics
   //(i.e. Bragg+inelastic).  So ask the framework to set this up, except for

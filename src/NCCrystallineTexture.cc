@@ -2,30 +2,59 @@
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
-#include "NCrystal/internal/NCRandUtils.hh"
 #include "NCrystal/internal/NCVector.hh"
 #include "NCrystal/internal/NCOrientUtils.hh"
 #include "NCrystal/internal/NCMath.hh"
 #include "NCrystal/NCDefs.hh"
-#include "NCrystal/internal/NCMatrix.hh"
+#include "NCrystal/internal/NCPlaneProvider.hh"
+#include "NCrystal/internal/NCLatticeUtils.hh"
 
-//PDDF
-double calc_pddf( NCrystal::Vector& preferred_orientation, NCrystal::Vector& tau_hkl, double p1 )
+//preferred orientation distribution function (Sato 2011)
+double sato_mmd_podf( const NCrystal::Vector& preferred_orientation, NCrystal::Vector vec_hkl,
+                      double d_hkl, double R, double wl )
 {
-  //Calculation of the cylindrically symmetric Pole-Density Distribution Function (PDDF)
-  //P_hkl(theta_hkl) which depends on the orientation angle theta_hkl, i.e., angle between
-  //the preferred orientation and the plan vectors tau_hkl.
-  //The implementation is based on the extinction code provided by D. DiJulio
+  //Calculation of the modified March-Dollase preferred orientation distribution function
+  //reported in the paper of Sato et al. 2011
+  //P_hkl(lambda, d_hkl, hkl, R)
   //preferred_orientation : preferred orientation of texture
-  //tau_hkl : reciprocal lattice vector, or wavevector
-  //p1 : coefficient in the March-Dollase texture model
-  double Theta_hkl;        // orientation angle
-  double pddf_hkl;         // Pole-Density Distribution Function
-  Theta_hkl = std::acos(preferred_orientation.dot(tau_hkl) / preferred_orientation.mag() / tau_hkl.mag());
-  pddf_hkl = std::pow(p1, 2) * std::pow(std::cos(Theta_hkl), 2) + std::pow(std::sin(Theta_hkl), 2) / p1;
-  pddf_hkl = std::pow(pddf_hkl, -1.5);
- 
-  return pddf_hkl;
+  //vec_hkl : (h,k,l)
+  //d_hkl : dspacing for the hkl plan
+  //R : coefficient in the modified March-Dollase texture model
+  //wl : wavelength, Aa
+  //Note: P_hkl is symmetric in (h,k,l), i.e., P_hkl=P_-h-k-l
+  double P_hkl = 1.;
+  unsigned int num_phis = 1000; //can be changed later
+
+  double sin_theta = 0.5 * wl / d_hkl; //2*d_hkl*sin(theta_hkl)=lambda
+  if ( sin_theta >= -1. && sin_theta <= 1. ) {
+    double cos_theta = std::sqrt( 1 - NC::ncsquare(sin_theta) );
+
+    double cos_A = preferred_orientation.dot(vec_hkl) / ( std::sqrt( preferred_orientation.mag2() * vec_hkl.mag2() ) );
+    double sin_A = std::sqrt( 1 - NC::ncsquare(cos_A) );
+
+    //trapezoidal integration
+    P_hkl = 0.;
+    for ( auto phi : NC::linspace( 0, NC::k2Pi * (1-1./num_phis), num_phis ) ) {
+      double B = cos_A * sin_theta + sin_A * cos_theta * std::sin(phi); //integrand, to be optimised
+      //since P_hkl(0)=P_hkl(2pi)
+      P_hkl += std::pow( (NC::ncsquare(R * B) + (1 - NC::ncsquare(B)) / R), -1.5 ) / (num_phis+1);
+    }
+    //double epsilon = 1.E-9; //precision of the integration bounds
+    //double Rm1R = NC::ncsquare(R) - 1. / R;
+    //double a = Rm1R * NC::ncsquare(sin_A * cos_theta);
+    //double b = -2 * Rm1R * sin_A * cos_A * sin_theta * cos_theta;
+    //double c = Rm1R * NC::ncsquare(cos_A * sin_theta) + 1. / R;
+    //for ( auto x : NC::linspace( -1.+epsilon, 1.-epsilon, num_phis ) ) {
+    //  double x1mx = x * std::sqrt(1 - NC::ncsquare(x));
+    //  P_hkl += 1. / std::sqrt( std::pow( 4 * a * NC::ncsquare(x1mx) + 2 * b * x1mx + c, 3 ) * (1 - NC::ncsquare(x)) );
+    //}
+    //double x1 = -1.+epsilon * std::sqrt(1 - NC::ncsquare(-1.+epsilon));
+    //P_hkl -= 0.5 / std::sqrt( std::pow( 4 * a * NC::ncsquare(x1) + 2 * b * x1 + c, 3 ) * (1 - NC::ncsquare(-1.+epsilon)) );
+    //P_hkl -= 0.5 / std::sqrt( std::pow( 4 * a * NC::ncsquare(x1) - 2 * b * x1 + c, 3 ) * (1 - NC::ncsquare(-1.+epsilon)) );
+    //P_hkl /= NC::kPi * num_phis;
+  }
+
+  return P_hkl;
 }
 
 bool NCP::CrystallineTexture::isApplicable( const NC::Info& info )
@@ -34,7 +63,9 @@ bool NCP::CrystallineTexture::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info& info )
+NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::SCOrientation& sco,
+                                                                 const NC::Info& info,
+                                                                 NC::PlaneProvider * std_pp)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
   //raise BadInput exceptions, to make sure users gets understandable error
@@ -62,43 +93,41 @@ NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info&
 
   //Parse and validate values:
   NCrystal::Vector preferred_orientation1, preferred_orientation2;
-  double p1, f1, p2, f2;
+  double R1, f1, R2, f2;
   if ( ! NC::safe_str2dbl( data.at(0).at(0), preferred_orientation1.at(0) )
        || ! NC::safe_str2dbl( data.at(0).at(1), preferred_orientation1.at(1) )
        || ! NC::safe_str2dbl( data.at(0).at(2), preferred_orientation1.at(2) )
-       || ! NC::safe_str2dbl( data.at(0).at(3), p1 )
+       || ! NC::safe_str2dbl( data.at(0).at(3), R1 )
        || ! NC::safe_str2dbl( data.at(0).at(4), f1 )
        || ! NC::safe_str2dbl( data.at(1).at(0), preferred_orientation2.at(0) )
        || ! NC::safe_str2dbl( data.at(1).at(1), preferred_orientation2.at(1) )
        || ! NC::safe_str2dbl( data.at(1).at(2), preferred_orientation2.at(2) )
-       || ! NC::safe_str2dbl( data.at(1).at(3), p2 )
+       || ! NC::safe_str2dbl( data.at(1).at(3), R2 )
        || ! NC::safe_str2dbl( data.at(1).at(4), f2 )
-       || !(preferred_orientation1.mag()>0) || !(p1>0.0) || !(f1>0.0)
-       || !(preferred_orientation2.mag()>0) || !(p2>0.0) || !(f2>0.0)
+       || !(preferred_orientation1.mag()>0) || !(R1>0.0) || !(f1>0.0)
+       || !(preferred_orientation2.mag()>0) || !(R2>0.0) || !(f2>0.0)
        || !(f1+f2==1.0) )
     NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
-                     <<" POs (should not be [0,0,0]) p1,f1,p2,f2 (should be four positive floating point value) f1+f2 (should be 1, only two POs supported in this version)" );
+                     <<" POs (should not be [0,0,0]) R1,f1,R2,f2 (should be four positive floating point value) f1+f2 (should be 1, only two POs supported in this version)" );
     
-  //Getting the strcture info (volume, number of atoms, reciprocal lattice rotation matrix) and hkl list
+  //Getting the strcture info (volume, number of atoms, reciprocal lattice rotation matrix)
   const NCrystal::StructureInfo& struct_info = info.getStructureInfo();
-  const NCrystal::HKLList& hkl_list = info.hklList();
 
   //Parsing done! Create and return our model:
-  return CrystallineTexture(preferred_orientation1,p1,f1,preferred_orientation2,p2,f2,struct_info,hkl_list);
+  return CrystallineTexture(sco,preferred_orientation1,R1,f1,preferred_orientation2,R2,f2,struct_info,std_pp);
 }
 
-NCP::CrystallineTexture::CrystallineTexture( NCrystal::Vector& preferred_orientation1, double p1, double f1,
-                                             NCrystal::Vector& preferred_orientation2, double p2, double f2,
+NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
+                                             const NCrystal::Vector& preferred_orientation1, double R1, double f1,
+                                             const NCrystal::Vector& preferred_orientation2, double R2, double f2,
                                              const NCrystal::StructureInfo& struct_info,
-                                             const NCrystal::HKLList& hkl_list )
+                                             NCrystal::PlaneProvider * plane_provider )
   : m_preferred_orientation1(preferred_orientation1),
-    m_p1(p1),
+    m_R1(R1),
     m_f1(f1),
     m_preferred_orientation2(preferred_orientation2),
-    m_p2(p2),
-    m_f2(f2),
-    m_struct_info(struct_info),
-    m_hkl_list(hkl_list)
+    m_R2(R2),
+    m_f2(f2)
 {
   //Important note to developers who are using the infrastructure in the
   //testcode/ subdirectory: If you change the number or types of the arguments
@@ -108,46 +137,68 @@ NCP::CrystallineTexture::CrystallineTexture( NCrystal::Vector& preferred_orienta
   //model directly from your python test code).
 
   nc_assert( preferred_orientation1.mag() > 0.0 );
-  nc_assert( m_p1 > 0.0 );
+  nc_assert( m_R1 > 0.0 );
   nc_assert( m_f1 > 0.0 );
   nc_assert( preferred_orientation2.mag() > 0.0 );
-  nc_assert( m_p2 > 0.0 );
+  nc_assert( m_R2 > 0.0 );
   nc_assert( m_f2 > 0.0 );
+  nc_assert( plane_provider->canProvide() );
+
+  m_reclat = getReciprocalLatticeRot( struct_info );
+  NCrystal::RotMatrix lattice_rot = NC::getLatticeRot( struct_info.lattice_a, struct_info.lattice_b, struct_info.lattice_c,
+                                                       struct_info.alpha*NC::kDeg, struct_info.beta*NC::kDeg, struct_info.gamma*NC::kDeg );
+  m_lab2cry = getCrystal2LabRot( sco, m_reclat ).getInv();
+  
+  //RotMatrix cry2lab = getCrystal2LabRot( sco, m_reclat );
+  double V0numAtom = struct_info.n_atoms * struct_info.volume;
+  const double xsectfact = 0.5 / V0numAtom;
+
+  plane_provider->prepareLoop();
+
+  double maxdspacing(0);
+
+  NCrystal::Optional<NC::PlaneProvider::Plane> opt_plane;
+  while ( ( opt_plane = plane_provider->getNextPlane() ).has_value() ) {
+    auto& pl = opt_plane.value();
+    nc_assert( pl.dspacing > 0.0 );
+    if ( pl.dspacing > maxdspacing )
+      maxdspacing = pl.dspacing;
+    m_hklPlanes.push_back( HKLPlane{} );
+    auto& e = m_hklPlanes.back();
+    e.hkl = lattice_rot * pl.demi_normal;
+    e.d_hkl = pl.dspacing;
+    e.strength = pl.dspacing * pl.fsq * xsectfact;
+  }
 }
 
-double NCP::CrystallineTexture::calcCrossSection( double neutron_ekin ) const
+double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab ) const
 {
-  const double pi2hhm = NCrystal::kPiSq * NCrystal::const_hhm;
-  double volume = m_struct_info.volume;
-  int n_atoms = m_struct_info.n_atoms;
-  const NCrystal::RotMatrix& rec_lat = NCrystal::getReciprocalLatticeRot( m_struct_info );
-  double xsectfact = pi2hhm / (volume * n_atoms * neutron_ekin);
-  double xs_in_barns;
-  double xs_in_barns1 = 0.0;
-  double xs_in_barns2 = 0.0;
+  (void)ndirlab;//FIXME: Actually use this!!
+  //auto ndir = ( m_lab2cry * ndirlab.as<NC::Vector>() ).unit();
+  //ndir[0],ndir[1],ndir[2]
+  //auto neutron_HKL = m_reclat * ndir;
 
-  for ( auto& hkl : m_hkl_list ) {
-    double E_hkl = 0.5 * pi2hhm / std::pow(hkl.dspacing, 2);
-    if ( E_hkl <= neutron_ekin ) {
-      NCrystal::Vector hkl_vector = NCrystal::Vector(hkl.hkl.h, hkl.hkl.k, hkl.hkl.l);
-      NCrystal::Vector tau_hkl = rec_lat * hkl_vector;
-      double pddf_hkl1 = calc_pddf( m_preferred_orientation1, tau_hkl, m_p1); // March-Dollase texture model
-      double pddf_hkl2 = calc_pddf( m_preferred_orientation2, tau_hkl, m_p2);
-      double fdm1 = hkl.fsquared * hkl.multiplicity * hkl.dspacing * pddf_hkl1;
-      double fdm2 = hkl.fsquared * hkl.multiplicity * hkl.dspacing * pddf_hkl2;
-      xs_in_barns1 += fdm1;
-      xs_in_barns2 += fdm2;
-    }
+  double xs_in_barns = 0.0;
+
+  const double wl = neutron_ekin.wavelength().dbl();
+  const double wlsq = NC::ncsquare(wl);
+  for ( auto& e: m_hklPlanes ) {
+    if ( wl > 2 * e.d_hkl )
+      break;
+    double P1 = sato_mmd_podf( m_preferred_orientation1, e.hkl, e.d_hkl, m_R1, wl );
+    double P2 = sato_mmd_podf( m_preferred_orientation2, e.hkl, e.d_hkl, m_R2, wl );
+    xs_in_barns += e.strength * (P1 * m_f1 + P2 * m_f2);
   }
-  xs_in_barns = m_f1 * xs_in_barns1 + m_f2 * xs_in_barns2;
-  xs_in_barns *= xsectfact;
+  xs_in_barns *= 2.*wlsq; //consideration of the negative hkl
     
   return xs_in_barns;
 }
 
-NCP::CrystallineTexture::ScatEvent NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
+NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG&, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab ) const
 {
-  ScatEvent result;
+  //Don't do anything:
+  return { ekin, ndirlab };
+  //return { ekin, NC::randIsotropicDirection(rng).as<NeutronDirection>() };
 
   //if ( ! (neutron_ekin > m_cutoffekin) ) {
     //Special case: We are asked to sample a scattering event for a neutron
@@ -169,10 +220,8 @@ NCP::CrystallineTexture::ScatEvent NCP::CrystallineTexture::sampleScatteringEven
   //result.mu = randIsotropicScatterMu(rng).dbl();
     
   //Same as coherent elastic scattering
-  result.ekin_final = neutron_ekin;
-  result.mu = randIsotropicScatterMu(rng).dbl(); // Take isotropic first for test
+  //result.ekin_final = neutron_ekin.dbl();
+  //result.mu = randIsotropicScatterMu(rng).dbl(); // Take isotropic first for test
 
-  return result;
+  // return result;
 }
-
-
