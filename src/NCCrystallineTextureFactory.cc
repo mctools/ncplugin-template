@@ -14,14 +14,14 @@ namespace NCPluginNamespace {
     const char * name() const noexcept override { return NCPLUGIN_NAME_CSTR "Model"; }
     PluginScatter( CrystallineTexture && pm ) : m_pm(std::move(pm)) {}
 
-    NC::CrossSect crossSection(NC::CachePtr&, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab ) const override
+    NC::CrossSect crossSection(NC::CachePtr&, NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab ) const override
     {
-      return NC::CrossSect{ m_pm.calcCrossSection(ekin, ndirlab) };
+      return NC::CrossSect{ m_pm.calcCrossSection(neutron_ekin, ndirlab) };
     }
 
-    NC::ScatterOutcome sampleScatter(NC::CachePtr&, NC::RNG& rng, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab) const override
+    NC::ScatterOutcome sampleScatter(NC::CachePtr&, NC::RNG& rng, NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab) const override
     {
-      return m_pm.sampleScatteringEvent( rng, ekin, ndirlab );
+      return m_pm.sampleScatteringEvent( rng, neutron_ekin, ndirlab );
     }
 
   private:

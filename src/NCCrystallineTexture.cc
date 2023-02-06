@@ -8,6 +8,7 @@
 #include "NCrystal/NCDefs.hh"
 #include "NCrystal/internal/NCPlaneProvider.hh"
 #include "NCrystal/internal/NCLatticeUtils.hh"
+#include "NCrystal/internal/NCRandUtils.hh"
 
 //preferred orientation distribution function (Sato 2011)
 double sato_mmd_podf( const NCrystal::Vector& preferred_orientation, NCrystal::Vector vec_hkl,
@@ -194,11 +195,41 @@ double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin
   return xs_in_barns;
 }
 
-NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG&, NC::NeutronEnergy ekin, const NC::NeutronDirection& ndirlab ) const
+NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng, NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab ) const
 {
   //Don't do anything:
-  return { ekin, ndirlab };
-  //return { ekin, NC::randIsotropicDirection(rng).as<NeutronDirection>() };
+  //return { neutron_ekin, ndirlab };
+  //return { neutron_ekin, NC::randIsotropicDirection(rng).as<NeutronDirection>() };
+
+  NC::NeutronDirection outndirlab = ndirlab; //outgoing neutron direction
+  const double wl = neutron_ekin.wavelength().dbl();
+  const double wlsq = NC::ncsquare(wl);
+  const double xs = calcCrossSection( neutron_ekin, ndirlab ) / (2.*wlsq); //calculate xs
+  const double rnd = rng.generate(); //random number on [0;1]
+
+  double left_bound = 0.;
+  double right_bound = 0.;
+  for ( auto& e: m_hklPlanes ) {
+    if ( wl > 2 * e.d_hkl )
+      break;
+    double P1 = sato_mmd_podf( m_preferred_orientation1, e.hkl, e.d_hkl, m_R1, wl );
+    double P2 = sato_mmd_podf( m_preferred_orientation2, e.hkl, e.d_hkl, m_R2, wl );
+    right_bound += e.strength * (P1 * m_f1 + P2 * m_f2) / xs;
+    nc_assert( left_bound < right_bound && right_bound <= 1.0 );
+      
+    if ( left_bound <= rnd && right_bound > rnd ) {
+      const double E_hkl = 0.5 * NC::kPiSq * NC::const_hhm / NC::ncsquare(e.d_hkl);
+      const double mu = 1. - 2 * E_hkl / neutron_ekin.dbl();
+      nc_assert( NC::ncabs(mu) <= 1.0 );
+      outndirlab.as<NC::Vector>() = NC::randDirectionGivenScatterMu( rng, mu, ndirlab.as<NC::Vector>() );
+      break;
+    }
+    else {
+      left_bound = right_bound;
+    }
+  }
+
+  return { neutron_ekin, outndirlab };
 
   //if ( ! (neutron_ekin > m_cutoffekin) ) {
     //Special case: We are asked to sample a scattering event for a neutron
