@@ -50,7 +50,7 @@ namespace NCPluginNamespace {
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
 
-    NC::ScatterOutcome sampleScatteringEvent( NC::RNG& rng, NC::NeutronEnergy, const NC::NeutronDirection& ) const;
+    NC::ScatterOutcome sampleScatteringEvent( NC::RNG&, NC::NeutronEnergy, const NC::NeutronDirection& ) const;
 
   private:
     //Data members:
@@ -63,7 +63,7 @@ namespace NCPluginNamespace {
     struct HKLPlane {
       NCrystal::Vector hkl; //vector (h,k,l)
       double d_hkl; //dspacing
-      double strength;//dspacing*fsq*xsectfact
+      double strength; //dspacing*fsq*xsectfact
     };
     std::vector<HKLPlane> m_hklPlanes;
     NCrystal::RotMatrix m_lab2cry;
