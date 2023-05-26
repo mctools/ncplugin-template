@@ -11,9 +11,9 @@ class PhysicsModel:
 
     """Python version of the PhysicsModel class defined in the plugin."""
 
-    def __init__(self,sigma,lambda_cutoff):
+    def __init__(self,q, radius, thickness, sld_core, sld_shell, sld_solvent):
         """Initialise model. Refer to NCPhysicsModel.hh for the meaning of the parameters."""
-        self.__modelparams=(sigma,lambda_cutoff)
+        self.__modelparams=(q, radius, thickness, sld_core, sld_shell, sld_solvent)
 
     def calcCrossSection(self,ekin):
         """Calculates cross sections. The ekin parameter can be a float or a numpy
@@ -21,14 +21,14 @@ class PhysicsModel:
         scalar = not hasattr(ekin,'__len__')
         ekin = np.atleast_1d(ekin)
         xs = np.empty(ekin.size)
-        _hooks['getmanyxsvalues'](*self.__modelparams,ekin.size,ekin,xs)
+        # _hooks['getmanyxsvalues'](*self.__modelparams,ekin.size,ekin,xs)
         return xs[0] if scalar else xs
 
     def sampleScatMu(self,ekin,nvalues = 1):
         """Samples scattering mu=cos(theta_scat). The ekin parameter must be a float. If
         nvalues>1, returns a numpy array of results."""
         mu = np.empty(nvalues)
-        _hooks['samplemanyscatmu'](*self.__modelparams,ekin,nvalues,mu)
+        # _hooks['samplemanyscatmu'](*self.__modelparams,ekin,nvalues,mu)
         return mu if nvalues>1 else mu[0]
 
 def registerPlugin():

@@ -31,7 +31,7 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    PhysicsModel( double sigma, double lambda_cutoff );
+    PhysicsModel( double q, double radius, double thickness, double sld_core, double sld_shell, double sld_solvent, double result);
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
@@ -43,8 +43,12 @@ namespace NCPluginNamespace {
 
   private:
     //Data members:
-    double m_sigma;
-    double m_cutoffekin;
+    double m_radius;
+    double m_thickness;
+    double m_sld_core;
+    double m_sld_shell;
+    double m_sld_solvent;
+    double m_result;
   };
 
 }

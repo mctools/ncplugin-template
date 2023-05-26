@@ -1,4 +1,4 @@
-
+aux.sh
 #ignore emacs backup and lock files:
 *~
 \#*\#
