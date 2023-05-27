@@ -1,8 +1,10 @@
 #include "NCPhysicsModel.hh"
+#include <iostream>
 
 //Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/NCString.hh"
 #include "NCrystal/internal/NCRandUtils.hh"
+#include "sasmodels/sas_core_shell_sphere.c"
 
 bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
 {
@@ -36,7 +38,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
                     <<" section should be two numbers on a single line");
 
   //Parse and validate values:
-  double q, radius, thickness, sld_core, sld_shell, sld_solvent, result;
+  double radius, thickness, sld_core, sld_shell, sld_solvent, result;
   // if ( ! NC::safe_str2dbl( data.at(0).at(0), sigma )
   //      || ! NC::safe_str2dbl( data.at(0).at(1), lambda_cutoff )
   //      || ! (sigma>0.0) || !(lambda_cutoff>=0.0) )
@@ -44,16 +46,15 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
   //                    <<" section (should be two positive floating point values)" );
 
   //Parsing done! Create and return our model:
-  return PhysicsModel(q, radius, thickness, sld_core, sld_shell, sld_solvent, result);
+  return PhysicsModel(radius, thickness, sld_core, sld_shell, sld_solvent);
 }
 
-NCP::PhysicsModel::PhysicsModel( double q, double radius, double thickness, double sld_core, double sld_shell, double sld_solvent, double result)
+NCP::PhysicsModel::PhysicsModel( double radius, double thickness, double sld_core, double sld_shell, double sld_solvent)
   : m_radius(radius),
     m_thickness(thickness),
     m_sld_core(sld_core),
     m_sld_shell(sld_shell),
-    m_sld_solvent(sld_solvent),
-    m_result(result)
+    m_sld_solvent(sld_solvent)
 {
   //Important note to developers who are using the infrastructure in the
   //testcode/ subdirectory: If you change the number or types of the arguments
@@ -64,28 +65,41 @@ NCP::PhysicsModel::PhysicsModel( double q, double radius, double thickness, doub
 
   nc_assert( m_radius > 0.0 );
   nc_assert( m_thickness > 0.0);
+}
 
-  // Core first, then add in shell
-  const double core_qr = q * m_radius;
-  const double core_contrast = m_sld_core - m_sld_shell;
-  // const double core_bes = sas_3j1x_x(core_qr);
-  const double core_volume = 4.0 * M_PIl /3.0 * pow(radius,3);
-  double m_result = core_volume * core_contrast; //* core_bes 
-
-  // Now the shell
-  const double shell_qr = q * (radius + thickness);
-  const double shell_contrast = m_sld_core - m_sld_shell;
-  // const double shell_bes = sas_3j1x_x(shell_qr);
-  const double shell_volume = 4.0 * M_PIl/3.0 * pow(radius,3);
-  m_result += shell_volume * shell_contrast; // * shell_bes
+double NCP::PhysicsModel::calcIQ(double Q) const
+{
+  double F1=0.0, F2=0.0;
+  Fq(Q, &F1, &F2, m_radius, m_thickness, m_sld_core, m_sld_shell, m_sld_solvent);
+  return F2;
 }
 
 double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 {
-  // if ( neutron_ekin > m_cutoffekin )
-  //   return m_sigma;
-  // return m_sigma*(1.0/exp(-(neutron_ekin-m_cutoffekin)));
-  return m_result;
+  double xs=0.0;
+  NC::VectD Q;
+  NC::VectD IofQ;
+
+  double q_min = std::log10(1e-6);
+  int sampling =  std::abs(1-q_min)*10000;
+  Q = NC::logspace(q_min,1,sampling);
+  IofQ = Q;
+  // Q = NC::ekin2ksq(neutron_ekin);
+
+  double lastk = 2.*NC::kPi/NC::ekin2wl(neutron_ekin);
+  // std::cout << "Energy:" << neutron_ekin << ", last k:" << lastk << std::endl;
+
+  // CHECK FIX
+  for (size_t i=1; i<Q.size(); i++){
+    if (Q[i] <= 2.0*lastk){
+    IofQ[i] = NCP::PhysicsModel::calcIQ(Q[i]);
+    xs += (Q[i]*IofQ[i] + Q[i-1]*IofQ[i-1])*(Q[i]-Q[i-1]);
+    }
+  }
+
+  xs *= 0.5;
+
+  return xs;
 }
 
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
