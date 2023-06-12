@@ -31,10 +31,19 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    PhysicsModel( double q, double radius, double thickness, double sld_core, double sld_shell, double sld_solvent, double result);
+    PhysicsModel( double radius, double sld, double sld_solvent);
+
+    // provides IQ for SANS model
+    double calcIQ(double Q) const;
+
+    double integrand(double Q) const;
 
     //Provide cross sections for a given neutron:
     double calcCrossSection( double neutron_ekin ) const;
+
+    double ncrystalSANSSphere(double neutron_ekin) const;
+
+    double calcXSwithIofQHelper( double neutron_ekin) const;
 
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
@@ -44,9 +53,7 @@ namespace NCPluginNamespace {
   private:
     //Data members:
     double m_radius;
-    double m_thickness;
-    double m_sld_core;
-    double m_sld_shell;
+    double m_sld;
     double m_sld_solvent;
     double m_result;
   };

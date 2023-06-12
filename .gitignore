@@ -34,3 +34,5 @@ __pycache__/
 #Miscellaneous:
 .DS_Store
 vgcore.*
+ncrystal_sansspheres.ipynb
+tmp

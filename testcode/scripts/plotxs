@@ -4,9 +4,10 @@ import ncplugin
 import NCrystal as NC
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import simps
 
-q = 10
-physmodel = ncplugin.PhysicsModel( q, radius=60.0, thickness=10.0, sld_core=1.0, sld_shell=2.0, sld_solvent=3.0 )
+
+physmodel = ncplugin.PhysicsModel( radius=60.0, sld=1.0, sld_solvent=3.0 )
 
 print('cross section @   3.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(3.0)) )
 print('cross section @   7.0 Aa : %g barn'%physmodel.calcCrossSection(NC.wl2ekin(7.0)) )
@@ -14,7 +15,50 @@ print('cross section @   0.5 eV : %g barn'%physmodel.calcCrossSection( 0.5 ) )
 print('cross section @ 0.001 eV : %g barn'%physmodel.calcCrossSection( 0.001 ) )
 
 wls = np.linspace(0.01,10.0,1000)
-plt.plot( wls, physmodel.calcCrossSection(NC.wl2ekin(wls)) )
-plt.xlabel('angstrom')
+qvals = NC.wl2ksq(wls)
+energy = NC.wl2ekin(wls)
+
+# plt.subplot(1,2,1)
+# plt.plot( energy, physmodel.calcCrossSection(energy) )
+# # plt.xlabel('$angstrom^{-1}$')
+# plt.xlabel('Energy')
+# plt.ylabel('barn')
+
+Iq = [physmodel.calcIQ(Q) for Q in qvals]
+plt.subplot(1,2,2)
+plt.plot(qvals, Iq)
+plt.xlim(0.4,5)
+plt.xlabel('$angstrom^{-1}$')
+plt.xscale('log')
+plt.yscale('log')
+plt.ylim(bottom=1e-4)
+
+print()
+
+inc_wls = np.logspace(-2,2,1000)
+k0s = NC.wl2k(inc_wls)
+energies = NC.wl2ekin(inc_wls)
+
+thetas = np.linspace(0, np.pi/2.0,1000)
+print(thetas)
+
+xs_vec = []
+for k0 in k0s:
+    # qvals = 2*k0*np.sin(thetas)
+    qvals = np.linspace(0, 2*k0, 1000)
+    qIq = [physmodel.calcIQ(Q)*Q for Q in qvals]
+    xs = simps(qIq, qvals)
+    xs_vec.append(xs/k0**2 * 4*np.pi*60**3/3)
+
+
+# Thomas approach
+# ncSANS = NC.internal.SANSSphereScatter(2.0, 60)
+
+
+plt.subplot(1,2,1)
+plt.loglog(energies, xs_vec, label="xs python")
+plt.plot( energies, physmodel.calcCrossSection(energies), label="my xs plugin")
+plt.xlabel('Energy')
 plt.ylabel('barn')
+plt.legend()
 plt.show()

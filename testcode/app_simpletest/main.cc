@@ -7,9 +7,8 @@ int main()
   //Very simple test which instantiates our model and calculates a few cross
   //sections and samples a few scattering events:
 
-  double a=0.0;
 
-  auto pm = NCP::PhysicsModel( 1, 60.0 /*radius*/, 10.0 /*thickness*/, 1.0 /*sld_core*/, 2.0 /*sld_shell*/, 3.0 /*sld_solvent*/, a);
+  auto pm = NCP::PhysicsModel( 60.0 /*radius*/, 1.0 /*sld*/, 3.0 /*sld_solvent*/);
 
   for ( auto wl : NC::linspace(0.01, 8.0, 20) ) {
     std::cout << "cross section @ " << wl << " Aa is "

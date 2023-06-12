@@ -41,13 +41,18 @@ def _setuptestlibhooks():
 
     f = lib.nctest_samplemanyscatmu
     f.restype = None # void
-    f.argtypes = [ ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr ]
+    f.argtypes = [ ctypes.c_double,  ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr ]
     hooks['samplemanyscatmu'] = f
 
     f = lib.nctest_getmanyxsvalues
     f.restype = None # void
-    f.argtypes = [ ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr, npdoubleptr ]
+    f.argtypes = [ ctypes.c_double,  ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr, npdoubleptr ]
     hooks['getmanyxsvalues'] = f
+
+    f = lib.nctest_getmanyIQvalues
+    f.restype = None # void
+    f.argtypes = [ ctypes.c_double,  ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr, npdoubleptr ]
+    hooks['getmanyIQvalues'] = f
 
     hooks['ncplugin_register'] = lib.ncplugin_register
 
