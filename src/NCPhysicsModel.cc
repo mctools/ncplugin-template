@@ -102,6 +102,20 @@ double NCP::PhysicsModel::calcXSwithIofQHelper(double neutron_ekin) const
 
 }
 
+
+double NCP::PhysicsModel::ncrystalSANSSphere(double neutron_ekin) const
+{
+  NC::SANSSphereScatter SANS(double contrast=60.0, double r=2.0);
+  
+  std::unique_ptr<NCrystal::CacheBase> dummy; 
+  NC::CrossSect xs;
+
+  // xs = SANS.crossSectionIsotropic(dummy, neutron_ekin);
+
+  // return xs;
+
+}
+
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {
   ScatEvent result;
