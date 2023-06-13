@@ -15,6 +15,12 @@ namespace NCPluginNamespace {
     //ScatFact = Factory<FactoryType::Scatter,ProcImpl::Process,ScatterRequest>
     const char * name() const noexcept override;
 
+
+    MultiPhaseCapability multiPhaseCapability() const override
+    {
+      return MultiPhaseCapability::MPOnly;
+    }
+
     NC::Priority query( const NC::FactImpl::ScatterRequest& ) const override;
     NC::ProcImpl::ProcPtr produce( const NC::FactImpl::ScatterRequest& ) const override;
   };
