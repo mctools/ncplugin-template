@@ -33,6 +33,14 @@ class PhysicsModel:
         _hooks['getmanyIQvalues'](*self.__modelparams,q.size,q,IQ)
         return IQ[0] if scalar else IQ
 
+    def calcXSwithIofQHelper(self, neutron_ekin):
+        """Calculates XS using IofQHelper"""
+        scalar = not hasattr(neutron_ekin, '__len__')
+        neutron_ekin = np.atleast_1d(neutron_ekin)
+        XS = np.empty(neutron_ekin.size)
+        _hooks['getmanyxsfromiofq'](*self.__modelparams,neutron_ekin.size, neutron_ekin, XS)
+        return XS[0] if scalar else XS
+
     def sampleScatMu(self,ekin,nvalues = 1):
         """Samples scattering mu=cos(theta_scat). The ekin parameter must be a float. If
         nvalues>1, returns a numpy array of results."""

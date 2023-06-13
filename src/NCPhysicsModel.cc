@@ -8,6 +8,8 @@
 #include "NCrystal/internal/NCMath.hh"
 #include "NCrystal/internal/NCSANSSphScat.hh"
 #include "NCrystal/internal/NCIofQHelper.hh"
+#include "NCrystal/internal/NCSANSUtils.hh"
+#include "NCrystal/NCTypes.hh"
 
 bool NCP::PhysicsModel::isApplicable( const NC::Info& info )
 {
@@ -55,7 +57,26 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo( const NC::Info& info )
 NCP::PhysicsModel::PhysicsModel( double radius, double sld, double sld_solvent)
   : m_radius(radius),
     m_sld(sld),
-    m_sld_solvent(sld_solvent)
+    m_sld_solvent(sld_solvent),
+    m_Iq([this]() -> NC::IofQHelper {
+
+      double q_min = 1e-6;
+      double lastk = 2.0 * NC::kPi/NC::ekin2wl(100); // 100 eV 
+
+      int nPoints = 100000; //review this value
+      
+      NC::VectD Q = NC::geomspace(q_min,2.0*lastk,nPoints);
+      NC::VectD IofQ;
+      IofQ.reserve(Q.size());
+      
+      for( auto i : NC::ncrange(Q.size()))
+        IofQ.push_back(this->calcIQ(Q[i]));
+
+      //TODO: Move to:
+      //template<class TVector, class Func>
+      //inline TVector vectorTrf(const TVector&, const Func&);//
+      return { Q, IofQ };
+    }())
 {
   //Important note to developers who are using the infrastructure in the
   //testcode/ subdirectory: If you change the number or types of the arguments
@@ -80,14 +101,9 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
 
   double q_min = 0.0;
   double lastk = 2.0 * NC::kPi/NC::ekin2wl(neutron_ekin);
-  unsigned int n = 100;
-  // std::cout << "Energy:" << neutron_ekin << ", last k:" << lastk << std::endl;
-
-  // CHECK FIX
+  unsigned int n = 1000;
   auto integrand = [this](double Q){return Q * this->calcIQ(Q);};
-
-
-  double xs = NC::integrateSimpsons(integrand, q_min, 2*lastk, n);
+  double xs = NC::integrateTrapezoidal(integrand, q_min, 2.0*lastk, n);
 
   double vol;
   double ksq = lastk * lastk;
@@ -95,26 +111,41 @@ double NCP::PhysicsModel::calcCrossSection( double neutron_ekin ) const
   return xs;
 }
 
-
-double NCP::PhysicsModel::calcXSwithIofQHelper(double neutron_ekin) const
-{
-  NC::IofQHelper
-
-}
-
-
 double NCP::PhysicsModel::ncrystalSANSSphere(double neutron_ekin) const
 {
-  NC::SANSSphereScatter SANS(double contrast=60.0, double r=2.0);
+  NC::SANSScaleFactor scale(NC::SLDContrast{3.449}, NC::NumberDensity{0.0572208}, 0.05);
+
+  NC::SANSSphereScatter::sphere_radius radius{2.0};
+  NC::SANSSphereScatter SANS(scale, radius);
   
   std::unique_ptr<NCrystal::CacheBase> dummy; 
   NC::CrossSect xs;
 
-  // xs = SANS.crossSectionIsotropic(dummy, neutron_ekin);
+  xs = SANS.crossSectionIsotropic(dummy, NC::NeutronEnergy(neutron_ekin));
 
-  // return xs;
+  return xs.get();
 
 }
+
+double NCP::PhysicsModel::calcXSwithIofQHelper(double neutron_ekin) const
+{
+
+  NC::NeutronEnergy en(neutron_ekin);
+  std::cout << en << "lal" << std::endl;
+
+  double lastk = 2.0 * NC::kPi/NC::ekin2wl(neutron_ekin);
+
+  auto xs = m_Iq.calcQIofQIntegral(en);
+  double vol;
+  double ksq = lastk * lastk;
+  xs *= form_volume(m_radius)/(ksq);
+  
+  NC::SANSScaleFactor scale(NC::SLDContrast{3.449}, NC::NumberDensity{0.0572208}, 0.05); // last one is phi
+  
+  xs *= scale.get();
+  return xs;
+}
+
 
 NCP::PhysicsModel::ScatEvent NCP::PhysicsModel::sampleScatteringEvent( NC::RNG& rng, double neutron_ekin ) const
 {

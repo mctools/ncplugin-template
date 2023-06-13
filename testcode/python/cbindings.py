@@ -53,6 +53,11 @@ def _setuptestlibhooks():
     f.restype = None # void
     f.argtypes = [ ctypes.c_double,  ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr, npdoubleptr ]
     hooks['getmanyIQvalues'] = f
+    
+    f = lib.nctest_getmanyxsfromiofq
+    f.restype = None
+    f.argtypes = [ ctypes.c_double,  ctypes.c_double, ctypes.c_double, ctypes.c_uint, npdoubleptr, npdoubleptr ]
+    hooks['getmanyxsfromiofq'] = f
 
     hooks['ncplugin_register'] = lib.ncplugin_register
 

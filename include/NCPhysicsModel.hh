@@ -4,7 +4,7 @@
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
                                           //namespaces and aliases)
-
+#include "NCrystal/internal/NCIofQHelper.hh"
 namespace NCPluginNamespace {
 
   //We implement the actual physics model in this completely custom C++ helper
@@ -56,6 +56,7 @@ namespace NCPluginNamespace {
     double m_sld;
     double m_sld_solvent;
     double m_result;
+    NC::IofQHelper m_Iq;//iffy! must be last for now
   };
 
 }

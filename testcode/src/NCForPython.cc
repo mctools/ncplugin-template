@@ -31,4 +31,12 @@ extern "C" {
       output_mu[i] = pm.sampleScatteringEvent(rng,ekin).mu;
   }
 
+  void nctest_getmanyxsfromiofq(double radius, double sld, double sld_solvent,  unsigned array_size, const double* ekin_array, double* output_xs_array )
+  {
+    
+    NCP::PhysicsModel pm(radius, sld, sld_solvent);
+    for (unsigned i = 0; i < array_size; ++i)
+      output_xs_array[i] = pm.calcXSwithIofQHelper(ekin_array[i]);
+  }
+
 }

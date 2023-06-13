@@ -33,22 +33,19 @@ plt.xscale('log')
 plt.yscale('log')
 plt.ylim(bottom=1e-4)
 
-print()
-
-inc_wls = np.logspace(-2,2,1000)
+inc_wls = np.logspace(-2,2,10000)
 k0s = NC.wl2k(inc_wls)
 energies = NC.wl2ekin(inc_wls)
+npoints = 100
+# thetas = np.linspace(0, np.pi/2.0,npoints)
 
-thetas = np.linspace(0, np.pi/2.0,1000)
-print(thetas)
-
-xs_vec = []
-for k0 in k0s:
-    # qvals = 2*k0*np.sin(thetas)
-    qvals = np.linspace(0, 2*k0, 1000)
-    qIq = [physmodel.calcIQ(Q)*Q for Q in qvals]
-    xs = simps(qIq, qvals)
-    xs_vec.append(xs/k0**2 * 4*np.pi*60**3/3)
+# xs_vec = []
+# for k0 in k0s:
+#     # qvals = 2*k0*np.sin(thetas)
+#     qvals = np.linspace(0, 2*k0, npoints)
+#     qIq = [physmodel.calcIQ(Q)*Q for Q in qvals]
+#     xs = simps(qIq, qvals)
+#     xs_vec.append(xs/k0**2 * 4*np.pi*60**3/3)
 
 
 # Thomas approach
@@ -56,8 +53,9 @@ for k0 in k0s:
 
 
 plt.subplot(1,2,1)
-plt.loglog(energies, xs_vec, label="xs python")
-plt.plot( energies, physmodel.calcCrossSection(energies), label="my xs plugin")
+# plt.loglog(energies, xs_vec, label="xs python")
+# plt.plot( energies, physmodel.calcCrossSection(energies), label="my xs plugin")
+plt.plot(energies, physmodel.calcXSwithIofQHelper(energies), label="xs from IofQHelper")
 plt.xlabel('Energy')
 plt.ylabel('barn')
 plt.legend()
