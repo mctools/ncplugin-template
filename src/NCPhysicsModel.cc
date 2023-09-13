@@ -449,7 +449,7 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
       double A2 = m_param.value().at(2);
       double b2 = m_param.value().at(3);
       double Q0 = m_param.value().at(4);
-      double xs = calcCrossSection(neutron_ekin);
+      double xs = (2 * NC::kPi / (k * k)) * (A1 / (-b1 + 2) * std::pow(Q0, -b1 + 2) + A2 / (-b2 + 2) * std::pow(2 * k, -b2 + 2) - A2 / (-b2 + 2) * std::pow(Q0, -b2 + 2));
       nc_assert(k != 0);
       nc_assert(xs != 0);
       double ratio_sigma = (2 * NC::kPi / (k * k)) / xs; // cross section over total cross section ratio
