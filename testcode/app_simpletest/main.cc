@@ -9,8 +9,9 @@ int main()
   //sections and samples a few scattering events:
   //NC::VectD param{132.869, -1.33605, 0.0519763, -3.97314, 0.0510821, 5.551};
   //auto pm = NCP::PhysicsModel(NCrystalPlugin_SANSND::PhysicsModel::Model::PPF, 132.869, 1.33605, 0.0519763, 3.97314, 0.0510821);
-  NC::VectD param{50};
-  auto pm = NCP::PhysicsModel(NCrystalPlugin_SANSND::PhysicsModel::Model::HSFBA, param);
+  //NC::VectD param{50};
+  NC::VectD param{132.869, 1.33605, 0.0519763, 3.97314, 0.0510821, 1};
+  auto pm = NCP::PhysicsModel(NCrystalPlugin_SANSND::PhysicsModel::Model::PPF, param);
 
   /*for ( auto en :  NC::logspace(-4,1,50) ) {
     std::cout << "cross section @ " << en << " eV is "
@@ -30,12 +31,21 @@ int main()
       }
     }
   }*/
-
-  auto angles = NCPluginTestCode::sampleAngles(pm, NC::wl2ekin(50), 1000);
+  double avg;
+  auto angles = NCPluginTestCode::sampleAngles(pm, NC::wl2ekin(10), 1000);
   for (size_t i = 0; i < 1000; i++)
   {
-    std::cout << angles[i]*180/(2*3.1421) << std::endl;
+    avg += angles[i]*180/(2*3.1421)/1000;
   }
+    std::cout << avg << std::endl;
+
+  auto ekins = NC::logspace(-5,1,1000);
+  auto xs = NCPluginTestCode::sampleXS(pm, ekins, 1000);
+  std::cout << xs[0] << std::endl;
+  //for (size_t i = 0; i < ekins.size(); i++)
+  //{
+  //  std::cout << xs[i] << std::endl;
+  //} 
   
 
   return 0;

@@ -21,6 +21,7 @@
 namespace NCPluginTestCode {
 
   std::vector<double> sampleAngles( const NCP::PhysicsModel&, double ekin, unsigned nvalues );
+  std::vector<double> sampleXS( const NCP::PhysicsModel& pm, std::vector<double> ekins, unsigned nvalues );
 
 }
 
