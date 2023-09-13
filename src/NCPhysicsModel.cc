@@ -312,7 +312,7 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
       case Model::PPF: 
       {
         // IT IS NOT ACTUALLY USED; WHAT TO DO WITH IT?
-        nc_assert(param.size()==5);
+        nc_assert(param.size()==6);
         double A1=param.at(0);
         double b1=param.at(1);
         double A2=param.at(2);
@@ -449,6 +449,7 @@ double NCP::PhysicsModel::sampleScatteringVector(NC::RNG &rng, double neutron_ek
       double A2 = m_param.value().at(2);
       double b2 = m_param.value().at(3);
       double Q0 = m_param.value().at(4);
+      double corr=m_param.value().at(5);
       double xs = (2 * NC::kPi / (k * k)) * (A1 / (-b1 + 2) * std::pow(Q0, -b1 + 2) + A2 / (-b2 + 2) * std::pow(2 * k, -b2 + 2) - A2 / (-b2 + 2) * std::pow(Q0, -b2 + 2));
       nc_assert(k != 0);
       nc_assert(xs != 0);

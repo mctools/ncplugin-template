@@ -29,6 +29,7 @@ b1=1.33605
 A2=0.0519763
 b2=3.97314
 Q0=0.0510821
+corr=1
 #Grammer
 #A1 = 45
 #b1 = 1.4
@@ -140,10 +141,10 @@ dummyal="""NCMAT v5
     .265855 .300494 .41769 .385856 .222808 .130473 .0823366 .0292034 .0125285 0
 """
 
-customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g'% ( "SANSND", 
+customsection='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g %g'% ( "SANSND", 
                                         version,
                                         "PPF",
-                                        A1,b1,A2,b2,Q0 )
+                                        A1,b1,A2,b2,Q0,corr )
 
 customsection2='@CUSTOM_%s\n  %g\n %s\n %g %g %g %g %g %g'% ( "SANSND", 
                                         version,
