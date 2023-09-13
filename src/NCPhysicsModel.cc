@@ -71,8 +71,13 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   else if (data.at(1).at(0) == "PPF")
   {
     std::cout << "Mode PPF selected" << std::endl;
-    double A1, b1, A2, b2, Q0;
-    if (!NC::safe_str2dbl(data.at(2).at(0), A1) || !NC::safe_str2dbl(data.at(2).at(1), b1) || !NC::safe_str2dbl(data.at(2).at(2), A2) || !NC::safe_str2dbl(data.at(2).at(3), b2) || !NC::safe_str2dbl(data.at(2).at(4), Q0))
+    double A1, b1, A2, b2, Q0, corr;
+    if (!NC::safe_str2dbl(data.at(2).at(0), A1) 
+    || !NC::safe_str2dbl(data.at(2).at(1), b1) 
+    || !NC::safe_str2dbl(data.at(2).at(2), A2) 
+    || !NC::safe_str2dbl(data.at(2).at(3), b2) 
+    || !NC::safe_str2dbl(data.at(2).at(4), Q0)
+    || !NC::safe_str2dbl(data.at(2).at(5), corr))
       NCRYSTAL_THROW2(BadInput, "Invalid values specified for model PPF in the @CUSTOM_" << pluginNameUpperCase()
                                                                                          << " section (see the plugin readme for more info)");
     // CHECK THE INPUT PARAM
@@ -81,8 +86,9 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     nc_assert(A2 > 0);
     nc_assert(b2 > 0);
     nc_assert(Q0 > 0);
+    nc_assert(corr > 0);
 
-    param.insert(param.end(), {A1, b1, A2, b2, Q0});
+    param.insert(param.end(), {A1, b1, A2, b2, Q0, corr});
     Model model = Model::PPF;
     // Parsing done! Create and return our model:
     return PhysicsModel(model, param);
@@ -312,6 +318,7 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
         double A2=param.at(2);
         double b2=param.at(3);
         double Q0=param.at(4);
+        double corr=param.at(5);
         double q_min = std::log10(1e-6);
         int sampling =  std::abs(1-q_min)*10000;
         q = NC::logspace(q_min,1,sampling);
@@ -388,7 +395,9 @@ double NCP::PhysicsModel::calcCrossSection(double neutron_ekin) const
       double A2 = m_param.value().at(2);
       double b2 = m_param.value().at(3);
       double Q0 = m_param.value().at(4);
+      double corr = m_param.value().at(5);
       SANS_xs = (2 * NC::kPi / (k * k)) * (A1 / (-b1 + 2) * std::pow(Q0, -b1 + 2) + A2 / (-b2 + 2) * std::pow(2 * k, -b2 + 2) - A2 / (-b2 + 2) * std::pow(Q0, -b2 + 2));
+      SANS_xs = SANS_xs*corr; // correction added for comparison in thesis
     }
     else
     {
