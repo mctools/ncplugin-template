@@ -6,6 +6,11 @@
 
 cmake_minimum_required(VERSION 3.15.3)
 
+execute_process( COMMAND ncrystal-config --show cmakedir
+                 OUTPUT_VARIABLE NCrystal_DIR
+                 OUTPUT_STRIP_TRAILING_WHITESPACE )
+find_package(NCrystal REQUIRED)
+
 #Extract plugin name from ncplugin_name.txt:
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/ncplugin_name.txt" NCPlugin_NAME LIMIT_COUNT 1)
 string(STRIP "${NCPlugin_NAME}" NCPlugin_NAME)
