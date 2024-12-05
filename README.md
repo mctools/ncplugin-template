@@ -6,7 +6,7 @@ This plugin is dedicated to study the extinction effects observed in polycrystal
 
 The installation necessitates to recompile NCrystal, a tutorial is presented as follows:
 
-'''
+```
 conda create -n ncrystal-extinction -y -c conda-forge jupyter numpy scipy matplotlib pip h5py
 conda activate ncrystal-extinction
 cd path/to/directory
@@ -22,7 +22,7 @@ $($CONDA_PREFIX/bin/ncrystal-config --setup)
 nctool --test
 python3 -c 'import NCrystal; NCrystal.test()'
 python3 -c 'import NCrystal; print(NCrystal.__version__)'
-'''
+```
 
 # Note
 
