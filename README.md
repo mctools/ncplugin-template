@@ -4,7 +4,7 @@ This plugin is dedicated to study the extinction effects observed in polycrystal
 
 # Installation
 
-The installation necessitates to recompile NCrystal, a tutorial is presented as follows:
+The installation necessitates to recompile NCrystal, a tutorial is presented below:
 
 ```
 conda create -n ncrystal-extinction -y -c conda-forge jupyter numpy scipy matplotlib pip h5py
