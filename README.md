@@ -2,7 +2,7 @@
 
 This plugin is dedicated to study the extinction effects observed in polycrystalline matherials. Both Sabine's and Becker and Coppens' (BC) extinction models are implemented.
 
-# Installation
+## Installation
 
 The installation necessitates to recompile NCrystal, a tutorial is presented below:
 
@@ -24,6 +24,6 @@ python3 -c 'import NCrystal; NCrystal.test()'
 python3 -c 'import NCrystal; print(NCrystal.__version__)'
 ```
 
-# Note
+## Note
 
 A jupyter notebook is attached in the folder "verification" for testing the implementation. The extinction model will be further implemented inside NCrystal as an internal funtionality, please check the lastest version of the code: https://github.com/mctools/ncrystal
