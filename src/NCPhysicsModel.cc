@@ -1,8 +1,8 @@
 #include "NCPhysicsModel.hh"
 
 // Include various utilities from NCrystal's internal header files:
-#include "NCrystal/internal/NCString.hh"
-#include "NCrystal/internal/NCRandUtils.hh"
+#include "NCrystal/internal/utils/NCString.hh"
+#include "NCrystal/internal/utils/NCRandUtils.hh"
 
 #include <algorithm>
 #include <sys/stat.h>
