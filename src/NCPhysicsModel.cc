@@ -3,6 +3,7 @@
 // Include various utilities from NCrystal's internal header files:
 #include "NCrystal/internal/utils/NCString.hh"
 #include "NCrystal/internal/utils/NCRandUtils.hh"
+#include "NCrystal/internal/utils/NCMath.hh"
 
 #include <algorithm>
 #include <sys/stat.h>
@@ -72,10 +73,10 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
   {
     std::cout << "Mode PPF selected" << std::endl;
     double A1, b1, A2, b2, Q0, corr;
-    if (!NC::safe_str2dbl(data.at(2).at(0), A1) 
-    || !NC::safe_str2dbl(data.at(2).at(1), b1) 
-    || !NC::safe_str2dbl(data.at(2).at(2), A2) 
-    || !NC::safe_str2dbl(data.at(2).at(3), b2) 
+    if (!NC::safe_str2dbl(data.at(2).at(0), A1)
+    || !NC::safe_str2dbl(data.at(2).at(1), b1)
+    || !NC::safe_str2dbl(data.at(2).at(2), A2)
+    || !NC::safe_str2dbl(data.at(2).at(3), b2)
     || !NC::safe_str2dbl(data.at(2).at(4), Q0)
     || !NC::safe_str2dbl(data.at(2).at(5), corr))
       NCRYSTAL_THROW2(BadInput, "Invalid values specified for model PPF in the @CUSTOM_" << pluginNameUpperCase()
@@ -108,7 +109,7 @@ NCP::PhysicsModel NCP::PhysicsModel::createFromInfo(const NC::Info &info)
     nc_assert(p > 0);
     nc_assert(Qmin > 0);
     if (data.at(2).size()==6)
-    { 
+    {
       std::cout << "Q1 not inserted. Default 0.016 used." << std::endl;
       Q1 = 0.016;
     }
@@ -182,7 +183,7 @@ NCP::PhysicsModel::PhysicsModel(Model model, std::string filename)
             }
           } else {
             NCRYSTAL_THROW2( BadInput,rel_path << ": Invalid data file for the "<<pluginNameUpperCase()
-                            <<" plugin" );   
+                            <<" plugin" );
           }
           break;
         }
@@ -208,8 +209,8 @@ NCP::PhysicsModel::PhysicsModel(Model model, std::string filename)
           {
             NCRYSTAL_THROW2(BadInput, rel_path << ": Invalid data file for the " << pluginNameUpperCase()
                                               << " plugin");
-          }        
-          
+          }
+
           //Generate vector of data q and IofQ
           double q_min = std::log10(1e-6);
           int sampling =  std::abs(1-q_min)*10000;
@@ -219,7 +220,7 @@ NCP::PhysicsModel::PhysicsModel(Model model, std::string filename)
           double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
           double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
           std::for_each(IofQ.begin(),IofQ.end(),
-                          [Rs,freq,physical_constant](double &x) { 
+                          [Rs,freq,physical_constant](double &x) {
                             double R, f, osc_term, Nc;
                             double I=0;
                             for (size_t i = 0; i < Rs.size(); ++i)
@@ -235,7 +236,7 @@ NCP::PhysicsModel::PhysicsModel(Model model, std::string filename)
                             }
                             x = physical_constant * std::pow(x, -6) * I * 1e8 ;//# convert to barn
                             }
-                          ); 
+                          );
           break;
         }
       }
@@ -249,16 +250,16 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
     : m_model(model),
       m_param(param),
       m_helper(([model, param]() -> NC::IofQHelper
-                { 
+                {
       NC::VectD q;
-      NC::VectD IofQ;  
+      NC::VectD IofQ;
       switch(model)
-      {       
+      {
       case Model::GPF:
       { //GPF
         std::cout << "Intialize GPF" << std::endl;
         nc_assert(param.size()==7);
-      
+
         double A=param.at(0);
         double s=param.at(1);
         double rg=param.at(2);
@@ -277,16 +278,16 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
         if (Q1>Qmin){
           it_q1 = std::lower_bound(IofQ.begin(),IofQ.end(), Q1);
           //Approximation valid as long as we have high sampling. Otherwise interpolation needed
-          if (it_q1==IofQ.end()) 
+          if (it_q1==IofQ.end())
             NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
                               <<" section (see the plugin readme for more info)" );
           nc_assert(s!=3);
           double C = A*std::pow(Q1,p-s)*std::exp((-Q1*Q1*rg*rg)/(3-s));
           std::for_each(IofQ.begin(),it_q1,
                         [C,p](double &x) { x = C*std::pow(x,-p);}
-                        ); 
+                        );
         } else {
-          std::cout << "Given Q_min greater then Q1. No low-q power law implemented (see the plugin readme for more info)\n"; 
+          std::cout << "Given Q_min greater then Q1. No low-q power law implemented (see the plugin readme for more info)\n";
           it_q1 = IofQ.begin();
         }
         //evaluate Q2 where IofQ stops being evaluated as Guinier and Porod starts
@@ -294,22 +295,22 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
         //IofQ still filled with q here
         auto it_q2 = std::lower_bound(it_q1,IofQ.end(), Q2);
         //Approximation valid as long as we have high sampling. Otherwise interpolation needed
-        if (it_q2==IofQ.end()) 
+        if (it_q2==IofQ.end())
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q2 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
                             <<" section (see the plugin readme for more info)" );
-        if (it_q2==it_q1) 
+        if (it_q2==it_q1)
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q1==Q2 in the @CUSTOM_"<<pluginNameUpperCase()
                             <<" section (see the plugin readme for more info)" );
         double B = A*std::pow(Q2,m-s)*std::exp((-Q2*Q2*rg*rg)/(3-s));
         std::for_each(it_q1,it_q2,
                       [A,s,rg](double &x) { x = A*std::pow(x,-s)*std::exp((-x*x*rg*rg)/(3-s));}
-                      ); 
+                      );
         std::for_each(it_q2,IofQ.end(),
                       [B,m](double &x) { x = B*std::pow(x,-m);}
                       );
-        break;        
-      } 
-      case Model::PPF: 
+        break;
+      }
+      case Model::PPF:
       {
         // IT IS NOT ACTUALLY USED; WHAT TO DO WITH IT?
         nc_assert(param.size()==6);
@@ -324,17 +325,17 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
         q = NC::logspace(q_min,1,sampling);
         IofQ = q;
         auto it_q0 = std::lower_bound(IofQ.begin(),IofQ.end(), Q0);
-        if (it_q0==IofQ.end()) 
+        if (it_q0==IofQ.end())
           NCRYSTAL_THROW2( BadInput,"Invalid parameters, Q0 bigger then 10 AA-1 in the @CUSTOM_"<<pluginNameUpperCase()
                             <<" section (see the plugin readme for more info)" );
         std::for_each(IofQ.begin(),it_q0,
                       [A1,b1](double &x) { x = A1*std::pow(x,-b1);}
-                      ); 
+                      );
         std::for_each(it_q0,IofQ.end(),
                       [A2,b2](double &x) { x = A2*std::pow(x,-b2);}
-                      ); 
+                      );
         break;
-      } 
+      }
       case Model::HSFBA:
       {
         nc_assert(param.size()==1);
@@ -347,11 +348,11 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
         double n = 0.1771471666666667; // [at/AA^3] <- Diamond atom density
         double physical_constant = 16*NC::kPi*NC::kPi*std::pow(n*b, 2);  // [1/AA^4]
         std::for_each(IofQ.begin(),IofQ.end(),
-                        [mono_R,physical_constant](double &x) { 
+                        [mono_R,physical_constant](double &x) {
                           double R, osc_term, Nc;
                           double I=0;
                           R = mono_R * 10; // converto to AA
-                          nc_assert(R>0); 
+                          nc_assert(R>0);
                           osc_term = (sin(x*R) - x*R * cos(x*R)) * (sin(x*R) - x*R * cos(x*R));
                           //Determine the number of atoms in a diamon nanoparticle to normalize per-atoms
                           // Nc = V * n = 4/3*pi*R^3 * n
@@ -359,14 +360,14 @@ NCP::PhysicsModel::PhysicsModel(Model model, NC::VectD param)
                           I += std::pow(x, -6) * osc_term / Nc * 1e8;//# convert to barn
                           x = physical_constant* I ;
                           }
-                        );       
+                        );
         break;
-      } 
-      default: 
-          NCRYSTAL_THROW2(LogicError,"Bad internal state in costructor for model SANSND plugin");
-      
       }
-      //Initialize the helper 
+      default:
+          NCRYSTAL_THROW2(LogicError,"Bad internal state in costructor for model SANSND plugin");
+
+      }
+      //Initialize the helper
       NC::IofQHelper helper(q,IofQ);
       return helper; })())
       {
