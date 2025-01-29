@@ -7,8 +7,7 @@
 #Also needed for vi:
 .*.sw?
 
-#ignore tempory cmake build output and installations:
-/testcode/utils/cache/
+/venv/
 
 #Extra protection against adding in build output created by custom user commands:
 *.so
@@ -29,30 +28,9 @@
 *.app
 
 __pycache__/
-build/
-
-testcode/data/njoy_calc.txt
-testcode/data/teshi.dat
-testcode/data/vesuvio_unc.dat
-testcode/data/vesuvio.dat
-testcode/data/vesuvio_4mm.inp
-testcode/scripts/plotradicand.py
-
+.ipynb_checkpoints/
+.vscode/
 
 #Miscellaneous:
 .DS_Store
 vgcore.*
-.vscode/
-testcode/data/openmc_fwd.dat
-testcode/data/nesvi.dat
-testcode/data/openmc_bkw.dat
-testcode/data/F4690504.tmp:Zone.Identifier
-testcode/data/AA6BE253.tmp:Zone.Identifier
-testcode/data/9CC7D60B.tmp:Zone.Identifier
-testcode/data/3DCFA2D9.tmp:Zone.Identifier
-boost
-testcode/data/Ersez_dataset:Zone.Identifier
-testcode/data/*:Zone.Identifier
-testcode/data/muvals
-testcode/data/muvals_files
-compile_plugin.sh
