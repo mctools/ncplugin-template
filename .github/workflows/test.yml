@@ -1,0 +1,53 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '8 15 * * 0'  # 8:15 every Monday
+
+jobs:
+  build_and_test_plugin:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: src
+
+    - name: Install dependencies
+      run: pip install 'ncrystal-core>=3.9.86' "scikit-build-core>=0.10" "ncrystal-pypluginmgr>=0.0.3" "ncrystal-python>=3.9.86"
+
+    - name: Install plugin
+      run: pip install ./src
+
+    - name: Verify plugin loading
+      shell: python
+      run: |
+        import os
+        os.environ['NCRYSTAL_PLUGIN_RUNTESTS'] = '1'
+        os.environ['NCRYSTAL_REQUIRED_PLUGINS'] = 'CrysText'
+        import NCrystal
+        NCrystal.browsePlugins(dump=True)
+
+    - name: Use plugin file
+      run: nctool -d 'plugins::CrysText/Al_sg225.ncmat'
+
+    - name: Load all plugin files
+      shell: python
+      run: |
+        from NCrystal.datasrc import browseFiles
+        from NCrystal.core import createScatter
+        for f in browseFiles(factory='plugins'):
+            if f.name.startswith('CrysText/'):
+                print('Loading f.fullKey')
+                createScatter( f'{f.fullKey}'
+                               ";dir1=@crys_hkl:0,1,0@lab:0,1,0"
+                               ";dir2=@crys_hkl:1,0,0@lab:1,0,0"
+                               ";mos=0.1deg;dirtol=180deg" )
