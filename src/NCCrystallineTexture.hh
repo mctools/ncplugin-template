@@ -4,10 +4,10 @@
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
                                           //namespaces and aliases)
-#include "NCrystal/NCSCOrientation.hh"
-#include "NCrystal/internal/NCRotMatrix.hh"
-#include "NCrystal/internal/NCVector.hh"
-#include "NCrystal/internal/NCPlaneProvider.hh"
+#include "NCrystal/interfaces/NCSCOrientation.hh"
+#include "NCrystal/internal/utils/NCRotMatrix.hh"
+#include "NCrystal/internal/utils/NCVector.hh"
+#include "NCrystal/internal/extd_utils/NCPlaneProvider.hh"
 
 namespace NCPluginNamespace {
 

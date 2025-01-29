@@ -1,9 +1,0 @@
-#!/usr/bin/env python3
-
-# This example primarily shows how the data files placed in
-# <pluginroot>/testcode/data can be accessed in the ncplugin/ directory
-# after installation:
-
-import NCrystal as NC
-info = NC.createInfo("ncplugin/custom.ncmat;dcutoff=1")
-info.dump()

@@ -7,8 +7,7 @@
 #Also needed for vi:
 .*.sw?
 
-#ignore tempory cmake build output and installations:
-/testcode/utils/cache/
+/venv/
 
 #Extra protection against adding in build output created by custom user commands:
 *.so

@@ -1,14 +1,13 @@
 #include "NCCrystallineTexture.hh"
 
 //Include various utilities from NCrystal's internal header files:
-#include "NCrystal/internal/NCString.hh"
-#include "NCrystal/internal/NCVector.hh"
-#include "NCrystal/internal/NCOrientUtils.hh"
-#include "NCrystal/internal/NCMath.hh"
-#include "NCrystal/NCDefs.hh"
-#include "NCrystal/internal/NCPlaneProvider.hh"
-#include "NCrystal/internal/NCLatticeUtils.hh"
-#include "NCrystal/internal/NCRandUtils.hh"
+#include "NCrystal/internal/utils/NCString.hh"
+#include "NCrystal/internal/utils/NCVector.hh"
+#include "NCrystal/internal/utils/NCMath.hh"
+#include "NCrystal/internal/utils/NCLatticeUtils.hh"
+#include "NCrystal/internal/utils/NCRandUtils.hh"
+#include "NCrystal/internal/extd_utils/NCOrientUtils.hh"
+#include "NCrystal/internal/extd_utils/NCPlaneProvider.hh"
 
 //preferred orientation distribution function (Sato 2011)
 double sato_mmd_podf( const NCrystal::Vector& preferred_orientation, NCrystal::Vector vec_hkl,
@@ -110,7 +109,7 @@ NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::SCOri
        || !(f1+f2==1.0) )
     NCRYSTAL_THROW2( BadInput,"Invalid values specified in the @CUSTOM_"<<pluginNameUpperCase()
                      <<" POs (should not be [0,0,0]) R1,f1,R2,f2 (should be four positive floating point value) f1+f2 (should be 1, only two POs supported in this version)" );
-    
+
   //Getting the strcture info (volume, number of atoms, reciprocal lattice rotation matrix)
   const NCrystal::StructureInfo& struct_info = info.getStructureInfo();
 
@@ -149,7 +148,7 @@ NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
   NCrystal::RotMatrix lattice_rot = NC::getLatticeRot( struct_info.lattice_a, struct_info.lattice_b, struct_info.lattice_c,
                                                        struct_info.alpha*NC::kDeg, struct_info.beta*NC::kDeg, struct_info.gamma*NC::kDeg );
   m_lab2cry = getCrystal2LabRot( sco, m_reclat ).getInv();
-  
+
   //RotMatrix cry2lab = getCrystal2LabRot( sco, m_reclat );
   double V0numAtom = struct_info.n_atoms * struct_info.volume;
   const double xsectfact = 0.5 / V0numAtom;
@@ -191,7 +190,7 @@ double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin
     xs_in_barns += e.strength * (P1 * m_f1 + P2 * m_f2);
   }
   xs_in_barns *= 2.*wlsq; //consideration of the negative hkl
-    
+
   return xs_in_barns;
 }
 
@@ -216,7 +215,7 @@ NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng,
     double P2 = sato_mmd_podf( m_preferred_orientation2, e.hkl, e.d_hkl, m_R2, wl );
     right_bound += e.strength * (P1 * m_f1 + P2 * m_f2) / xs;
     nc_assert( left_bound < right_bound && right_bound <= 1.0 );
-      
+
     if ( left_bound <= rnd && right_bound > rnd ) {
       const double E_hkl = 0.5 * NC::kPiSq * NC::const_hhm / NC::ncsquare(e.d_hkl);
       const double mu = 1. - 2 * E_hkl / neutron_ekin.dbl();
@@ -249,7 +248,7 @@ NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng,
 
   //result.ekin_final = neutron_ekin;//Elastic
   //result.mu = randIsotropicScatterMu(rng).dbl();
-    
+
   //Same as coherent elastic scattering
   //result.ekin_final = neutron_ekin.dbl();
   //result.mu = randIsotropicScatterMu(rng).dbl(); // Take isotropic first for test
