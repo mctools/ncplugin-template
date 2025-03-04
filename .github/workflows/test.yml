@@ -22,21 +22,16 @@ jobs:
         path: src
 
     - name: Install dependencies
-      run: pip install 'ncrystal-core>=3.9.86' "scikit-build-core>=0.10" "ncrystal-pypluginmgr>=0.0.3" "ncrystal-python>=3.9.86"
+      run: pip install 'ncrystal>=4.1.4'
 
     - name: Install plugin
       run: pip install ./src
 
     - name: Verify plugin loading
       shell: python
-      run: |
-        import os
-        os.environ['NCRYSTAL_PLUGIN_RUNTESTS'] = '1'
-        os.environ['NCRYSTAL_REQUIRED_PLUGINS'] = 'CrysText'
-        import NCrystal
-        NCrystal.browsePlugins(dump=True)
+      run: ncrystal-pluginmanager --test CrysText
 
-    - name: Use plugin file
+    - name: Use explicit plugin file
       run: nctool -d 'plugins::CrysText/Al_sg225.ncmat'
 
     - name: Load all plugin files
