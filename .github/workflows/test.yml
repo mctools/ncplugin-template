@@ -28,7 +28,6 @@ jobs:
       run: pip install ./src
 
     - name: Verify plugin loading
-      shell: python
       run: ncrystal-pluginmanager --test CrysText
 
     - name: Use explicit plugin file
