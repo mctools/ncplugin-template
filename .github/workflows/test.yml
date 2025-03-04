@@ -33,16 +33,3 @@ jobs:
 
     - name: Use explicit plugin file
       run: nctool -d 'plugins::CrysText/Al_sg225.ncmat'
-
-    - name: Load all plugin files
-      shell: python
-      run: |
-        from NCrystal.datasrc import browseFiles
-        from NCrystal.core import createScatter
-        for f in browseFiles(factory='plugins'):
-            if f.name.startswith('CrysText/'):
-                print('Loading f.fullKey')
-                createScatter( f'{f.fullKey}'
-                               ";dir1=@crys_hkl:0,1,0@lab:0,1,0"
-                               ";dir2=@crys_hkl:1,0,0@lab:1,0,0"
-                               ";mos=0.1deg;dirtol=180deg" )
