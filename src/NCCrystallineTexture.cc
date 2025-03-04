@@ -63,8 +63,7 @@ bool NCP::CrystallineTexture::isApplicable( const NC::Info& info )
   return info.countCustomSections(pluginNameUpperCase()) > 0;
 }
 
-NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::SCOrientation& sco,
-                                                                 const NC::Info& info,
+NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::Info& info,
                                                                  NC::PlaneProvider * std_pp)
 {
   //Parse the content of our custom section. In case of syntax errors, we should
@@ -114,11 +113,10 @@ NCP::CrystallineTexture NCP::CrystallineTexture::createFromInfo( const NC::SCOri
   const NCrystal::StructureInfo& struct_info = info.getStructureInfo();
 
   //Parsing done! Create and return our model:
-  return CrystallineTexture(sco,preferred_orientation1,R1,f1,preferred_orientation2,R2,f2,struct_info,std_pp);
+  return CrystallineTexture(preferred_orientation1,R1,f1,preferred_orientation2,R2,f2,struct_info,std_pp);
 }
 
-NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
-                                             const NCrystal::Vector& preferred_orientation1, double R1, double f1,
+NCP::CrystallineTexture::CrystallineTexture( const NCrystal::Vector& preferred_orientation1, double R1, double f1,
                                              const NCrystal::Vector& preferred_orientation2, double R2, double f2,
                                              const NCrystal::StructureInfo& struct_info,
                                              NCrystal::PlaneProvider * plane_provider )
@@ -129,13 +127,6 @@ NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
     m_R2(R2),
     m_f2(f2)
 {
-  //Important note to developers who are using the infrastructure in the
-  //testcode/ subdirectory: If you change the number or types of the arguments
-  //for the constructor here, you should make sure to perform a corresponding
-  //change in three files in the testcode/ directory: _cbindings.py,
-  //__init__.py, and NCForPython.cc - that way you can still instantiate your
-  //model directly from your python test code).
-
   nc_assert( preferred_orientation1.mag() > 0.0 );
   nc_assert( m_R1 > 0.0 );
   nc_assert( m_f1 > 0.0 );
@@ -144,12 +135,10 @@ NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
   nc_assert( m_f2 > 0.0 );
   nc_assert( plane_provider->canProvide() );
 
-  m_reclat = getReciprocalLatticeRot( struct_info );
   NCrystal::RotMatrix lattice_rot = NC::getLatticeRot( struct_info.lattice_a, struct_info.lattice_b, struct_info.lattice_c,
                                                        struct_info.alpha*NC::kDeg, struct_info.beta*NC::kDeg, struct_info.gamma*NC::kDeg );
-  m_lab2cry = getCrystal2LabRot( sco, m_reclat ).getInv();
 
-  //RotMatrix cry2lab = getCrystal2LabRot( sco, m_reclat );
+
   double V0numAtom = struct_info.n_atoms * struct_info.volume;
   const double xsectfact = 0.5 / V0numAtom;
 
@@ -171,15 +160,9 @@ NCP::CrystallineTexture::CrystallineTexture( const NC::SCOrientation& sco,
   }
 }
 
-double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab ) const
+double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin ) const
 {
-  (void)ndirlab;//FIXME: Actually use this!!
-  //auto ndir = ( m_lab2cry * ndirlab.as<NC::Vector>() ).unit();
-  //ndir[0],ndir[1],ndir[2]
-  //auto neutron_HKL = m_reclat * ndir;
-
   double xs_in_barns = 0.0;
-
   const double wl = neutron_ekin.wavelength().dbl();
   const double wlsq = NC::ncsquare(wl);
   for ( auto& e: m_hklPlanes ) {
@@ -190,20 +173,14 @@ double NCP::CrystallineTexture::calcCrossSection( NC::NeutronEnergy neutron_ekin
     xs_in_barns += e.strength * (P1 * m_f1 + P2 * m_f2);
   }
   xs_in_barns *= 2.*wlsq; //consideration of the negative hkl
-
   return xs_in_barns;
 }
 
-NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng, NC::NeutronEnergy neutron_ekin, const NC::NeutronDirection& ndirlab ) const
+NC::ScatterOutcomeIsotropic NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng, NC::NeutronEnergy neutron_ekin ) const
 {
-  //Don't do anything:
-  //return { neutron_ekin, ndirlab };
-  //return { neutron_ekin, NC::randIsotropicDirection(rng).as<NeutronDirection>() };
-
-  NC::NeutronDirection outndirlab = ndirlab; //outgoing neutron direction
   const double wl = neutron_ekin.wavelength().dbl();
   const double wlsq = NC::ncsquare(wl);
-  const double xs = calcCrossSection( neutron_ekin, ndirlab ) / (2.*wlsq); //calculate xs
+  const double xs = calcCrossSection( neutron_ekin ) / (2.*wlsq);
   const double rnd = rng.generate(); //random number on [0;1]
 
   double left_bound = 0.;
@@ -220,38 +197,11 @@ NC::ScatterOutcome NCP::CrystallineTexture::sampleScatteringEvent( NC::RNG& rng,
       const double E_hkl = 0.5 * NC::kPiSq * NC::const_hhm / NC::ncsquare(e.d_hkl);
       const double mu = 1. - 2 * E_hkl / neutron_ekin.dbl();
       nc_assert( NC::ncabs(mu) <= 1.0 );
-      outndirlab.as<NC::Vector>() = NC::randDirectionGivenScatterMu( rng, mu, ndirlab.as<NC::Vector>() );
-      break;
+      return { neutron_ekin, NC::CosineScatAngle{ mu } };
     }
     else {
       left_bound = right_bound;
     }
   }
-
-  return { neutron_ekin, outndirlab };
-
-  //if ( ! (neutron_ekin > m_cutoffekin) ) {
-    //Special case: We are asked to sample a scattering event for a neutron
-    //energy where we have zero cross section! Although in a real simulation we
-    //would usually not expect this to happen, users with custom code might
-    //still generate such calls. The only consistent thing to do when the cross
-    //section is zero is to not change the neutron state parameters, which means:
-    //result.ekin_final = neutron_ekin;
-    //result.mu = 1.0;
-    //return result;
-  //}
-
-  //Implement our actual model here. Of course it is trivial for the example
-  //model. For a more realistic or complicated model, it might be that
-  //additional helper classes or functions should be created and used, in order
-  //to keep the code here manageable:
-
-  //result.ekin_final = neutron_ekin;//Elastic
-  //result.mu = randIsotropicScatterMu(rng).dbl();
-
-  //Same as coherent elastic scattering
-  //result.ekin_final = neutron_ekin.dbl();
-  //result.mu = randIsotropicScatterMu(rng).dbl(); // Take isotropic first for test
-
-  // return result;
+  return { neutron_ekin, NC::CosineScatAngle{1.0} };//state unchanged
 }

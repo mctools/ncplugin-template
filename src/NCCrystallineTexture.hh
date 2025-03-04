@@ -4,8 +4,6 @@
 #include "NCrystal/NCPluginBoilerplate.hh"//Common stuff (includes NCrystal
                                           //public API headers, sets up
                                           //namespaces and aliases)
-#include "NCrystal/interfaces/NCSCOrientation.hh"
-#include "NCrystal/internal/utils/NCRotMatrix.hh"
 #include "NCrystal/internal/utils/NCVector.hh"
 #include "NCrystal/internal/extd_utils/NCPlaneProvider.hh"
 
@@ -27,9 +25,10 @@ namespace NCPluginNamespace {
     //case of syntax errors in the @CUSTOM_ section data):
 
     static bool isApplicable( const NC::Info& );
-    static CrystallineTexture createFromInfo( const NC::SCOrientation&, const NC::Info&, NC::PlaneProvider * = nullptr );//will raise BadInput in case of syntax errors
+    static CrystallineTexture createFromInfo( const NC::Info&,
+                                              NC::PlaneProvider * = nullptr );//will raise BadInput in case of syntax errors
 
-    //The crystalline texuture or preferred orientation correction is taken into account by introducing 
+    //The crystalline texuture or preferred orientation correction is taken into account by introducing
     //the cylindrically symmetric Pole-Density Distribution Function (PDDF) or preferred orientation
     //distribution function P_hkl(lambda, theta_hkl) which depends on the orientation angle theta_hkl,
     //i.e., angle between the preferred orientation and the plan vectors hkl.
@@ -38,19 +37,18 @@ namespace NCPluginNamespace {
 
     //Constructor gets constant cross section value, and the neutron wavelength
     //cutoff:
-    CrystallineTexture( const NC::SCOrientation&,
-                        const NCrystal::Vector& preferred_orientation1, double R1, double f1,
+    CrystallineTexture( const NCrystal::Vector& preferred_orientation1, double R1, double f1,
                         const NCrystal::Vector& preferred_orientation2, double R2, double f2,
                         const NCrystal::StructureInfo& struct_info,
                         NC::PlaneProvider * std_pp = nullptr );
 
     //Provide cross sections for a given neutron:
-    double calcCrossSection( NC::NeutronEnergy, const NC::NeutronDirection&) const;
+    double calcCrossSection( NC::NeutronEnergy ) const;
 
     //Sample scattering event (rng is random number stream). Results are given
     //as the final ekin of the neutron and scat_mu which is cos(scattering_angle).
 
-    NC::ScatterOutcome sampleScatteringEvent( NC::RNG&, NC::NeutronEnergy, const NC::NeutronDirection& ) const;
+    NC::ScatterOutcomeIsotropic sampleScatteringEvent( NC::RNG&, NC::NeutronEnergy ) const;
 
   private:
     //Data members:
@@ -66,9 +64,6 @@ namespace NCPluginNamespace {
       double strength; //dspacing*fsq*xsectfact
     };
     std::vector<HKLPlane> m_hklPlanes;
-    NCrystal::RotMatrix m_lab2cry;
-    NCrystal::RotMatrix m_reclat;
-
   };
 
 }

@@ -26,7 +26,7 @@ namespace NCPluginNamespace {
 
   using PhysicsModel = CrystallineTexture;
 
-  class PluginScatter final : public NC::ProcImpl::ScatterAnisotropicMat {
+  class PluginScatter final : public NC::ProcImpl::ScatterIsotropicMat {
   public:
 
     //The factory wraps our custom PhysicsModel helper class in an NCrystal API
@@ -40,20 +40,18 @@ namespace NCPluginNamespace {
     PluginScatter( PhysicsModel && pm ) : m_pm(std::move(pm)) {}
 
 
-    NC::CrossSect crossSection(NC::CachePtr&,
-                               NC::NeutronEnergy neutron_ekin,
-                               const NC::NeutronDirection& ndirlab ) const override
+    NC::CrossSect crossSectionIsotropic(NC::CachePtr&,
+                               NC::NeutronEnergy neutron_ekin) const override
     {
-      return NC::CrossSect{ m_pm.calcCrossSection(neutron_ekin, ndirlab) };
+      return NC::CrossSect{ m_pm.calcCrossSection(neutron_ekin) };
     }
 
 
-    NC::ScatterOutcome sampleScatter(NC::CachePtr&,
+    NC::ScatterOutcomeIsotropic sampleScatterIsotropic(NC::CachePtr&,
                                      NC::RNG& rng,
-                                     NC::NeutronEnergy neutron_ekin,
-                                     const NC::NeutronDirection& ndirlab) const override
+                                     NC::NeutronEnergy neutron_ekin) const override
     {
-      return m_pm.sampleScatteringEvent( rng, neutron_ekin, ndirlab );
+      return m_pm.sampleScatteringEvent( rng, neutron_ekin );
     }
 
   private:
@@ -100,10 +98,8 @@ NCP::PluginFactory::produce( const NC::FactImpl::ScatterRequest& cfg ) const
   //Ok, we are selected as the provider! First create our own scatter model:
 
   auto sc_pp = createStdPlaneProvider( cfg.infoPtr() );
-  auto sco = cfg.createSCOrientation();
   auto sc_ourmodel
-    = NC::makeSO<PluginScatter>( CrystallineTexture::createFromInfo( sco,
-                                                                     cfg.info(),
+    = NC::makeSO<PluginScatter>( CrystallineTexture::createFromInfo( cfg.info(),
                                                                      sc_pp.get() ) );
 
   //Now we just need to combine this with all the other physics. So ask the
