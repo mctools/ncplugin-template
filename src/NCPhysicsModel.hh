@@ -24,7 +24,7 @@ namespace NCPluginNamespace {
 
     static bool isApplicable( const NC::Info& );
     static CrystallineExtinction createFromInfo( const NC::Info& );//will raise BadInput in case of syntax errors
-    
+
     //To account for the block size and the mosaic spread, the theories of extinction
     //introduce primary and secondary corrections to the coherent elastic neutron
     //scattering cross section for randomly oriented powders. Dependent on whether
@@ -75,6 +75,7 @@ namespace NCPluginNamespace {
     };
     std::vector<DFM> hklDFM;
   };
+  using PhysicsModel = CrystallineExtinction;
 
 }
 #endif
